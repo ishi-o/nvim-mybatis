@@ -52,7 +52,7 @@ function M.locate_method(method)
 	utils.log("Method not found: " .. method)
 end
 
-function M.get_namespace(node, bufnr)
+function M.get_class(node, bufnr)
 	local parent = node:parent()
 	if not parent then
 		return nil
@@ -61,11 +61,11 @@ function M.get_namespace(node, bufnr)
 	local query = vim.treesitter.query.parse(
 		"xml",
 		[[
-		((Attribute 
-			(Name) @attr_name
-			(AttValue) @attr_value)
-			(#eq? @attr_name "namespace"))
-		]]
+        ((Attribute
+          (Name) @attr_name
+          (AttValue) @attr_value)
+          (#any-of? @attr_name "resultType" "parameterType" "type" "namespace"))
+    ]]
 	)
 
 	for _, match in query:iter_matches(parent, bufnr, 0, -1) do
@@ -79,33 +79,6 @@ function M.get_namespace(node, bufnr)
 						return vim.treesitter.get_node_text(value_nodes[1], bufnr):gsub("['\"]", "")
 					end
 				end
-			end
-		end
-	end
-	return nil
-end
-
-function M.get_class(node, bufnr)
-	local parent = node:parent()
-	if not parent then
-		return nil
-	end
-
-	local query = vim.treesitter.query.parse(
-		"xml",
-		[[
-        ((Attribute
-          (Name) @attr_name
-          (AttValue) @attr_value)
-          (#any-of? @attr_name "resultType" "parameterType" "type"))
-    ]]
-	)
-
-	for _, match_node, metadata in query:iter_matches(parent, bufnr, 0, -1) do
-		if match_node == node or match_node == parent then
-			local value_node = metadata[2]
-			if value_node then
-				return vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
 			end
 		end
 	end

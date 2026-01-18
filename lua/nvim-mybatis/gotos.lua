@@ -19,11 +19,6 @@ function M.goto_java(bufnr)
 		return nil
 	end
 
-	local namespace = ts.get_namespace(node, bufnr)
-	if namespace then
-		return M.goto_class(namespace)
-	end
-
 	local clsname = ts.get_class(node, bufnr)
 	if clsname then
 		return M.goto_class(clsname)
