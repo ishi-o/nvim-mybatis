@@ -26,7 +26,7 @@ function M.goto_java(bufnr)
 
 	local sql_id = ts.get_sql_id(node, bufnr)
 	if sql_id then
-		local current_namespace = ts.get_belongto_namespace(bufnr)
+		local current_namespace = ts.get_belongto_namespace(node, bufnr)
 		if current_namespace then
 			return M.goto_method(current_namespace, sql_id)
 		end
