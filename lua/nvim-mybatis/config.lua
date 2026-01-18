@@ -8,6 +8,7 @@ M.DEFAULT_CONFIG = {
 	classpath = {
 		"src/main/java",
 	},
+	debug = true,
 }
 
 function M.setup(config)

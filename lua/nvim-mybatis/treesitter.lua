@@ -1,5 +1,7 @@
 local M = {}
 
+local utils = require("nvim-mybatis.utils")
+
 function M.locate_interface()
 	local bufnr = vim.api.nvim_get_current_buf()
 	local parser = vim.treesitter.get_parser(bufnr, "java")
@@ -47,7 +49,7 @@ function M.locate_method(method)
 		vim.api.nvim_win_set_cursor(0, { row + 1, col })
 		return
 	end
-	vim.notify("Method not found: " .. method, vim.log.levels.INFO)
+	utils.log("Method not found: " .. method)
 end
 
 function M.get_namespace(node, bufnr)
@@ -59,18 +61,24 @@ function M.get_namespace(node, bufnr)
 	local query = vim.treesitter.query.parse(
 		"xml",
 		[[
-        ((Attribute
-          (Name) @attr_name
-          (AttValue) @attr_value)
-          (#eq? @attr_name "namespace"))
-    ]]
+		((Attribute 
+			(Name) @attr_name
+			(AttValue) @attr_value)
+			(#eq? @attr_name "namespace"))
+		]]
 	)
 
-	for _, match_node, metadata in query:iter_matches(parent, bufnr, 0, -1) do
-		if match_node == node or match_node == parent then
-			local value_node = metadata[2] -- @attr_value
-			if value_node then
-				return vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+	for _, match in query:iter_matches(parent, bufnr, 0, -1) do
+		local name_nodes = match[1] -- @attr_name
+		local value_nodes = match[2] -- @attr_value
+
+		if name_nodes and value_nodes and #value_nodes > 0 then
+			for _, nodes in pairs(match) do
+				for _, matched in ipairs(nodes) do
+					if matched:id() == node:id() or matched:id() == parent:id() then
+						return vim.treesitter.get_node_text(value_nodes[1], bufnr):gsub("['\"]", "")
+					end
+				end
 			end
 		end
 	end

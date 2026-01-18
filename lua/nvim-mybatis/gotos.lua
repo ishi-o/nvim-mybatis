@@ -2,6 +2,7 @@ local M = {}
 
 local config = require("nvim-mybatis.config"):get()
 local ts = require("nvim-mybatis.treesitter")
+local utils = require("nvim-mybatis.utils")
 
 function M.goto_java(bufnr)
 	local cursor = vim.api.nvim_win_get_cursor(0)
@@ -23,9 +24,9 @@ function M.goto_java(bufnr)
 		return M.goto_class(namespace)
 	end
 
-	local class_name = ts.get_class(node, bufnr)
-	if class_name then
-		return M.goto_class(class_name)
+	local clsname = ts.get_class(node, bufnr)
+	if clsname then
+		return M.goto_class(clsname)
 	end
 
 	local sql_id = ts.get_sql_id(node, bufnr)
@@ -36,7 +37,7 @@ function M.goto_java(bufnr)
 		end
 	end
 
-	vim.notify("Not a valid MyBatis jump target", vim.log.levels.INFO)
+	utils.log("Not a valid MyBatis jump target")
 	return nil
 end
 
@@ -44,7 +45,7 @@ function M.goto_class(clsname)
 	local file_path = clsname:gsub("%.", "/") .. ".java"
 	local root_file = vim.fn.findfile("pom.xml", ".;")
 	if root_file == "" then
-		vim.notify("No pom.xml found", vim.log.levels.ERROR)
+		utils.log("No pom.xml found", vim.log.levels.ERROR)
 		return nil
 	end
 	for _, classpath in ipairs(config.classpath) do
@@ -57,7 +58,7 @@ function M.goto_class(clsname)
 			return true
 		end
 	end
-	vim.notify("Class not found", vim.log.levels.WARN)
+	utils.log("Class not found", vim.log.levels.WARN)
 	return nil
 end
 
@@ -65,7 +66,7 @@ function M.goto_method(clsname, method)
 	local file_path = clsname:gsub("%.", "/") .. ".java"
 	local root_file = vim.fn.findfile("pom.xml", ".;")
 	if root_file == "" then
-		vim.notify("No pom.xml found", vim.log.levels.ERROR)
+		utils.log("No pom.xml found", vim.log.levels.ERROR)
 		return nil
 	end
 	for _, classpath in ipairs(config.classpath) do
@@ -80,7 +81,7 @@ function M.goto_method(clsname, method)
 			return true
 		end
 	end
-	vim.notify("Class not found", vim.log.levels.WARN)
+	utils.log("Class not found", vim.log.levels.WARN)
 	return nil
 end
 
