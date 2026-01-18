@@ -25,4 +25,29 @@ function M.locate_interface()
 	end
 end
 
+function M.locate_method(method)
+	local bufnr = vim.api.nvim_get_current_buf()
+	local parser = vim.treesitter.get_parser(bufnr, "java")
+	if not parser then
+		return
+	end
+
+	local tree = parser:parse()[1]
+	local root = tree:root()
+
+	local query = vim.treesitter.query.parse("java", [[
+        (method_declaration
+          name: (identifier) @method_name
+          (#eq? @method_name "]] .. method .. [[")
+        )
+    ]])
+
+	for _, node in query:iter_captures(root, bufnr, 0, -1) do
+		local row, col, _, _ = node:range()
+		vim.api.nvim_win_set_cursor(0, { row + 1, col })
+		return
+	end
+	vim.notify("Method not found: " .. method, vim.log.levels.INFO)
+end
+
 return M

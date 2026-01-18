@@ -19,6 +19,7 @@ function M.setup()
 				buffer = bufnr,
 				desc = "Nvim-MyBatis: jump to Java class or method",
 			})
+			vim.notify("[Nvim-Mybatis] XML file loaded successfully", vim.log.levels.INFO)
 		end,
 	})
 	autocmd("FileType", {
