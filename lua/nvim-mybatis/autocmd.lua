@@ -14,7 +14,9 @@ function M.setup()
 				return
 			end
 			map("n", "gd", function()
-				gotos.goto_java(bufnr)
+				if not gotos.goto_java(bufnr) then
+					vim.lsp.buf.definition()
+				end
 			end, {
 				buffer = bufnr,
 				desc = "Nvim-MyBatis: jump to Java class or method",
