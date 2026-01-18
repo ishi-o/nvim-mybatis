@@ -1,6 +1,6 @@
 local M = {}
 
-local config = require("nvim-mybatis").config
+local config = require("nvim-mybatis.config"):get()
 local locate = require("nvim-mybatis.locate")
 
 function M.goto_java(bufnr) end

@@ -1,6 +1,6 @@
 local M = {}
 
-local config = require("nvim-mybatis").config
+local config = require("nvim-mybatis.config"):get()
 
 function M.is_mybatis_xml(bufnr)
 	local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":t")
