@@ -164,4 +164,67 @@ function M.get_belongto_namespace(node, bufnr)
 	return nil
 end
 
+--- @param filename string
+--- @param clsname string
+--- @return TSNode | nil
+function M.try_get_namespace(filename, clsname)
+	local f = io.open(filename, "r")
+	if f then
+		local first_chunk = f:read(1024)
+		f:close()
+		if
+			not first_chunk or not first_chunk:match("namespace%s-=%s-[\"']" .. clsname:gsub("%.", "%%.") .. "[\"']")
+		then
+			utils.debug("no namespace")
+			return nil
+		end
+	end
+
+	local bufnr = vim.fn.bufadd(filename)
+	vim.fn.bufload(bufnr)
+	local parser = vim.treesitter.get_parser(bufnr, "xml")
+	if not parser then
+		vim.api.nvim_buf_delete(bufnr, { force = true })
+		return nil
+	end
+
+	local root = parser:parse()[1]:root()
+	local query = vim.treesitter.query.parse(
+		"xml",
+		[[
+        (Attribute
+         (Name) @name
+         (AttValue) @value
+         (#eq? @name "namespace"))
+    ]]
+	)
+
+	local found_node = nil
+	for _, match in query:iter_matches(root, bufnr, 0, -1) do
+		local value_nodes = match[2]
+		if value_nodes and #value_nodes > 0 then
+			local value_node = value_nodes[1]
+			local namespace = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+			if namespace == clsname then
+				found_node = value_node
+				break
+			end
+		end
+	end
+
+	if not found_node then
+		vim.api.nvim_buf_delete(bufnr, { force = true })
+	end
+	return found_node
+end
+
+--- @param node TSNode
+function M.locate_namespace(node)
+	if not node then
+		return
+	end
+	local start_row, start_col, _, _ = node:range()
+	vim.api.nvim_win_set_cursor(0, { start_row + 1, start_col })
+end
+
 return M

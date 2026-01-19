@@ -80,6 +80,71 @@ function M.goto_method(clsname, method)
 	return nil
 end
 
-function M.goto_xml(bufnr) end
+function M.goto_xml(bufnr)
+	local cursor = vim.api.nvim_win_get_cursor(0)
+	local row, col = cursor[1] - 1, cursor[2]
+	local parser = vim.treesitter.get_parser(bufnr, "java")
+	if not parser then
+		return nil
+	end
+	local root = parser:parse()[1]:root()
+	local node = root:named_descendant_for_range(row, col, row, col)
+
+	if not node or node:type() ~= "identifier" then
+		return nil
+	end
+	local parent = node:parent()
+	if not parent or parent:type() ~= "interface_declaration" then
+		return nil
+	end
+
+	local interface_name = vim.treesitter.get_node_text(node, bufnr)
+	local package_name
+	local query = vim.treesitter.query.parse(
+		"java",
+		[[
+        (package_declaration (scoped_identifier) @pkg)
+    ]]
+	)
+	for _, match in query:iter_matches(root, bufnr, 0, -1) do
+		if match[1] and #match[1] > 0 then
+			package_name = vim.treesitter.get_node_text(match[1][1], bufnr)
+			break
+		end
+	end
+
+	if not package_name then
+		return nil
+	end
+	return M.goto_namespace(package_name .. "." .. interface_name)
+end
+
+function M.goto_namespace(clsname)
+	local root_file = vim.fn.findfile("pom.xml", ".;")
+	if root_file == "" then
+		utils.log("No pom.xml found", vim.log.levels.ERROR)
+		return nil
+	end
+	local project_root = vim.fn.fnamemodify(root_file, ":p:h")
+
+	for _, xml_glob in ipairs(config.xml_search_pattern) do
+		local search_path = project_root .. "/" .. xml_glob
+		local xml_files = vim.fn.glob(search_path, true, true)
+
+		for _, xml_file in ipairs(xml_files) do
+			local namespace_node = ts.try_get_namespace(xml_file, clsname)
+			if namespace_node then
+				vim.cmd("edit " .. vim.fn.fnameescape(xml_file))
+				ts.locate_namespace(namespace_node)
+				return true
+			end
+		end
+	end
+
+	utils.log("No XML file found for mapper: " .. clsname)
+	return nil
+end
+
+function M.goto_sql_id() end
 
 return M

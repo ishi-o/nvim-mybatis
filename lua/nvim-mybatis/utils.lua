@@ -2,17 +2,15 @@ local M = {}
 
 local config = require("nvim-mybatis.config"):get()
 
-function M.is_mybatis_xml(bufnr)
-	local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":t")
-	for _, pattern in ipairs(config.xml_pattern) do
+function M.is_mybatis_file(bufnr)
+	local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":t:r")
+	for _, pattern in ipairs(config.mapper_name_pattern) do
 		if filename:match(pattern) then
 			return true
 		end
 	end
 	return false
 end
-
-function M.is_mapper(bufnr) end
 
 --- Log a message.
 --- @param msg string Message to log

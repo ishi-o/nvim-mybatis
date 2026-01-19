@@ -10,7 +10,7 @@ function M.setup()
 		pattern = "xml",
 		callback = function(args)
 			local bufnr = args.buf
-			if not utils.is_mybatis_xml(bufnr) then
+			if not utils.is_mybatis_file(bufnr) then
 				return
 			end
 			map("n", "gd", function()
@@ -28,15 +28,18 @@ function M.setup()
 		pattern = "java",
 		callback = function(args)
 			local bufnr = args.buf
-			if not utils.is_mapper(bufnr) then
+			if not utils.is_mybatis_file(bufnr) then
 				return
 			end
 			map("n", "gd", function()
-				gotos.goto_xml(bufnr)
+				if not gotos.goto_xml(bufnr) then
+					vim.lsp.buf.definition()
+				end
 			end, {
 				buffer = bufnr,
 				desc = "Mybatis: jump to XML tags",
 			})
+			utils.log("Java file loaded successfully")
 		end,
 	})
 end
