@@ -4,6 +4,9 @@ local config = require("nvim-mybatis.config"):get()
 local ts = require("nvim-mybatis.treesitter")
 local utils = require("nvim-mybatis.utils")
 
+--- from xml to java
+--- @param bufnr integer
+--- @return boolean?
 function M.goto_java(bufnr)
 	local cursor = vim.api.nvim_win_get_cursor(0)
 	local row, col = cursor[1] - 1, cursor[2]
@@ -36,6 +39,9 @@ function M.goto_java(bufnr)
 	return nil
 end
 
+--- goto class position (xml to java)
+--- @param clsname string
+--- @return boolean?
 function M.goto_class(clsname)
 	local file_path = clsname:gsub("%.", "/") .. ".java"
 	local root_file = vim.fn.findfile("pom.xml", ".;")
@@ -57,6 +63,10 @@ function M.goto_class(clsname)
 	return nil
 end
 
+--- goto method position (xml to java)
+--- @param clsname string
+--- @param method string
+--- @return boolean?
 function M.goto_method(clsname, method)
 	local file_path = clsname:gsub("%.", "/") .. ".java"
 	local root_file = vim.fn.findfile("pom.xml", ".;")
@@ -80,6 +90,9 @@ function M.goto_method(clsname, method)
 	return nil
 end
 
+--- from java to xml
+--- @param bufnr integer
+--- @return boolean?
 function M.goto_xml(bufnr)
 	local cursor = vim.api.nvim_win_get_cursor(0)
 	local row, col = cursor[1] - 1, cursor[2]
@@ -144,6 +157,9 @@ function M.goto_xml(bufnr)
 	return method_name and M.goto_sql_id(clsname, method_name) or M.goto_namespace(clsname)
 end
 
+--- goto namespace (java to xml)
+--- @param clsname string
+--- @return boolean?
 function M.goto_namespace(clsname)
 	local root_file = vim.fn.findfile("pom.xml", ".;")
 	if root_file == "" then
@@ -170,6 +186,10 @@ function M.goto_namespace(clsname)
 	return nil
 end
 
+--- goto sql id (java to xml)
+--- @param clsname string
+--- @param method string
+--- @return boolean?
 function M.goto_sql_id(clsname, method)
 	local root_file = vim.fn.findfile("pom.xml", ".;")
 	if root_file == "" then

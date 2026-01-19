@@ -2,6 +2,9 @@ local M = {}
 
 local config = require("nvim-mybatis.config"):get()
 
+--- check if the filename matches config.mapper_name_pattern
+--- @param bufnr integer
+--- @return boolean
 function M.is_mybatis_file(bufnr)
 	local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ":t:r")
 	for _, pattern in ipairs(config.mapper_name_pattern) do

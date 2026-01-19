@@ -1,11 +1,11 @@
 local M = {}
 
 --- @class NvimMybatisConfig
---- @field enabled boolean enable nvim-mybatis
---- @field xml_search_pattern string[] where to search xml files
---- @field mapper_name_pattern string[] if the file need to load nvim-mybatis
---- @field classpath string[] relative path from classpath to project_path
---- @field debug boolean enable debug mode
+--- @field enabled boolean Enable nvim-mybatis
+--- @field xml_search_pattern string[] Patterns to search for XML files
+--- @field mapper_name_pattern string[] Patterns to identify Mapper files for plugin loading
+--- @field classpath string[] Relative paths from classpath to project root
+--- @field debug boolean Enable debug mode
 
 --- @type NvimMybatisConfig
 local DEFAULT_CONFIG = {
@@ -19,7 +19,7 @@ local DEFAULT_CONFIG = {
 	classpath = {
 		"src/main/java",
 	},
-	debug = true,
+	debug = false,
 }
 
 --- @type NvimMybatisConfig

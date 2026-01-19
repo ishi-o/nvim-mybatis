@@ -2,6 +2,7 @@ local M = {}
 
 local utils = require("nvim-mybatis.utils")
 
+--- locate interface
 function M.locate_interface()
 	local bufnr = vim.api.nvim_get_current_buf()
 	local parser = vim.treesitter.get_parser(bufnr, "java")
@@ -27,6 +28,8 @@ function M.locate_interface()
 	end
 end
 
+--- locate to method name in java file
+--- @param method string
 function M.locate_method(method)
 	local bufnr = vim.api.nvim_get_current_buf()
 	local parser = vim.treesitter.get_parser(bufnr, "java")
@@ -52,6 +55,11 @@ function M.locate_method(method)
 	utils.log("Method not found: " .. method)
 end
 
+--- get class name in java file
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string? classname
+--- @return integer?
 function M.get_class(node, bufnr)
 	local parent = node:parent()
 	if not parent then
@@ -85,6 +93,11 @@ function M.get_class(node, bufnr)
 	return nil
 end
 
+--- get sql id name
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string? method
+--- @return integer?
 function M.get_sql_id(node, bufnr)
 	local parent = node:parent()
 	if not parent then
@@ -118,6 +131,11 @@ function M.get_sql_id(node, bufnr)
 	return nil
 end
 
+--- get the ancestor namespace name of node
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string?
+--- @return integer?
 function M.get_belongto_namespace(node, bufnr)
 	local current = node
 	while current do
@@ -164,6 +182,7 @@ function M.get_belongto_namespace(node, bufnr)
 	return nil
 end
 
+--- try to check whether the file has clsname
 --- @param filename string
 --- @param clsname string
 --- @return TSNode | nil
@@ -215,6 +234,7 @@ function M.try_get_namespace(filename, clsname)
 	return found_node
 end
 
+--- locate the node position
 --- @param node TSNode
 function M.locate(node)
 	if not node then
@@ -224,6 +244,10 @@ function M.locate(node)
 	vim.api.nvim_win_set_cursor(0, { start_row + 1, start_col })
 end
 
+--- try to check whether the file has method
+--- @param filename string
+--- @param method string
+--- @return TSNode | nil
 function M.try_get_sql_id(filename, method)
 	local f = io.open(filename, "r")
 	if f then
