@@ -5,6 +5,7 @@ local M = {}
 --- @field xml_search_pattern string[] Patterns to search for XML files
 --- @field mapper_name_pattern string[] Patterns to identify Mapper files for plugin loading
 --- @field classpath string[] Relative paths from classpath to project root
+--- @field root_file string[] Root build files
 --- @field debug boolean Enable debug mode
 
 --- @type NvimMybatisConfig
@@ -18,6 +19,11 @@ local DEFAULT_CONFIG = {
 	},
 	classpath = {
 		"src/main/java",
+	},
+	root_file = {
+		"pom.xml",
+		"build.gradle",
+		"build.gradle.kts",
 	},
 	debug = false,
 }

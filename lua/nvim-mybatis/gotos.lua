@@ -44,13 +44,8 @@ end
 --- @return boolean?
 function M.goto_class(clsname)
 	local file_path = clsname:gsub("%.", "/") .. ".java"
-	local root_file = vim.fn.findfile("pom.xml", ".;")
-	if root_file == "" then
-		utils.log("No pom.xml found", vim.log.levels.ERROR)
-		return nil
-	end
+	local project_root = utils.get_module_root()
 	for _, classpath in ipairs(config.classpath) do
-		local project_root = vim.fn.fnamemodify(root_file, ":p:h")
 		local full_path = project_root .. "/" .. classpath .. "/" .. file_path
 
 		if vim.fn.filereadable(full_path) == 1 then
@@ -69,13 +64,8 @@ end
 --- @return boolean?
 function M.goto_method(clsname, method)
 	local file_path = clsname:gsub("%.", "/") .. ".java"
-	local root_file = vim.fn.findfile("pom.xml", ".;")
-	if root_file == "" then
-		utils.log("No pom.xml found", vim.log.levels.ERROR)
-		return nil
-	end
+	local project_root = utils.get_module_root()
 	for _, classpath in ipairs(config.classpath) do
-		local project_root = vim.fn.fnamemodify(root_file, ":p:h")
 		local full_path = project_root .. "/" .. classpath .. "/" .. file_path
 
 		if vim.fn.filereadable(full_path) == 1 then
@@ -161,12 +151,7 @@ end
 --- @param clsname string
 --- @return boolean?
 function M.goto_namespace(clsname)
-	local root_file = vim.fn.findfile("pom.xml", ".;")
-	if root_file == "" then
-		utils.log("No pom.xml found", vim.log.levels.ERROR)
-		return nil
-	end
-	local project_root = vim.fn.fnamemodify(root_file, ":p:h")
+	local project_root = utils.get_module_root()
 
 	for _, xml_glob in ipairs(config.xml_search_pattern) do
 		local search_path = project_root .. "/" .. xml_glob
@@ -191,12 +176,7 @@ end
 --- @param method string
 --- @return boolean?
 function M.goto_sql_id(clsname, method)
-	local root_file = vim.fn.findfile("pom.xml", ".;")
-	if root_file == "" then
-		utils.log("No pom.xml found", vim.log.levels.ERROR)
-		return nil
-	end
-	local project_root = vim.fn.fnamemodify(root_file, ":p:h")
+	local project_root = utils.get_module_root()
 
 	for _, xml_glob in ipairs(config.xml_search_pattern) do
 		local search_path = project_root .. "/" .. xml_glob

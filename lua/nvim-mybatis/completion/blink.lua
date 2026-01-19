@@ -6,14 +6,13 @@
 
 --- @type MyBatisSource
 local source = {}
-local uv = vim.loop or vim.uv
 
 local utils = require("nvim-mybatis.utils")
 local config = require("nvim-mybatis.config"):get()
 
-function source.new(opts, config)
+function source.new(opts, src_config)
 	local self = setmetatable({}, { __index = source })
-	self.config = config or {}
+	self.config = src_config or {}
 	self.opts = opts or {}
 	self.cache = {
 		packages = nil,
@@ -23,64 +22,22 @@ function source.new(opts, config)
 end
 
 function source:get_completions(ctx, callback)
-	local root_file = vim.fn.findfile("pom.xml", ".;")
-	local project_root = vim.fn.fnamemodify(root_file, ":p:h")
+	local project_root = utils.get_module_root()
 	local current_time = os.time()
 
 	if not self.cache.packages or current_time - self.cache.timestamp > 5 then
 		self.cache.packages = {}
 
-		local function scan_dir(dir_path, current_pkg)
-			local handle = uv.fs_scandir(dir_path)
-			if not handle then
-				return
-			end
-
-			while true do
-				local name, type = uv.fs_scandir_next(handle)
-				if not name then
-					break
-				end
-
-				if type == "file" and name:match("%.java$") then
-					local class_name = name:gsub("%.java$", "")
-					local full_class = current_pkg == "" and class_name or current_pkg .. "." .. class_name
-					table.insert(self.cache.packages, full_class)
-				elseif type == "directory" and not name:match("^%.") and name ~= "target" and name ~= "build" then
-					local new_pkg = current_pkg == "" and name or current_pkg .. "." .. name
-					scan_dir(dir_path .. "/" .. name, new_pkg)
-				end
-			end
-		end
-
 		for _, classpath in ipairs(config.classpath or {}) do
 			local full_path = project_root .. "/" .. classpath
 			if vim.fn.isdirectory(full_path) == 1 then
-				scan_dir(full_path, "")
+				for _, class in ipairs(utils.scan_java_classes(full_path, "")) do
+					table.insert(self.cache.packages, class)
+				end
 			end
 		end
 
-		local java_builtin_types = {
-			"String",
-			"Integer",
-			"Long",
-			"Double",
-			"Float",
-			"Boolean",
-			"Short",
-			"Byte",
-			"Character",
-			"Object",
-			"Void",
-			"Class",
-			"List",
-			"Map",
-			"Set",
-			"Collection",
-			"ArrayList",
-			"HashMap",
-			"HashSet",
-		}
+		local java_builtin_types = utils.get_java_builtin_types()
 
 		for _, type_name in ipairs(java_builtin_types) do
 			table.insert(self.cache.packages, "java.lang." .. type_name)
@@ -102,11 +59,12 @@ function source:get_completions(ctx, callback)
 	end
 
 	local items = {}
+	local types = require("blink.cmp.types")
 	for _, class_name in ipairs(self.cache.packages) do
 		if partial == "" or class_name:find(partial, 1, true) then
 			table.insert(items, {
 				label = class_name,
-				kind = require("blink.cmp.types").CompletionItemKind.Class,
+				kind = types.CompletionItemKind.Class,
 				insertText = class_name,
 				filterText = class_name,
 				data = { class = class_name },
@@ -119,7 +77,7 @@ function source:get_completions(ctx, callback)
 end
 
 function source:enabled()
-	if vim.bo.filetype ~= "xml" then
+	if vim.bo.filetype ~= "xml" or not utils.is_mybatis_file() then
 		return false
 	end
 	local node = vim.treesitter.get_node()
