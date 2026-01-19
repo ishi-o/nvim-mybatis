@@ -172,10 +172,7 @@ function M.try_get_namespace(filename, clsname)
 	if f then
 		local first_chunk = f:read(1024)
 		f:close()
-		if
-			not first_chunk or not first_chunk:match("namespace%s-=%s-[\"']" .. clsname:gsub("%.", "%%.") .. "[\"']")
-		then
-			utils.debug("no namespace")
+		if first_chunk and not first_chunk:match("namespace%s-=%s-[\"']" .. clsname:gsub("%.", "%%.") .. "[\"']") then
 			return nil
 		end
 	end
@@ -219,12 +216,65 @@ function M.try_get_namespace(filename, clsname)
 end
 
 --- @param node TSNode
-function M.locate_namespace(node)
+function M.locate(node)
 	if not node then
 		return
 	end
 	local start_row, start_col, _, _ = node:range()
 	vim.api.nvim_win_set_cursor(0, { start_row + 1, start_col })
+end
+
+function M.try_get_sql_id(filename, method)
+	local f = io.open(filename, "r")
+	if f then
+		local first_chunk = f:read(1024)
+		f:close()
+		if first_chunk and not first_chunk:match("id%s-=%s-[\"']" .. method .. "[\"']") then
+			return nil
+		end
+	end
+
+	local bufnr = vim.fn.bufadd(filename)
+	vim.fn.bufload(bufnr)
+	local parser = vim.treesitter.get_parser(bufnr, "xml")
+	if not parser then
+		vim.api.nvim_buf_delete(bufnr, { force = true })
+		return nil
+	end
+
+	local root = parser:parse()[1]:root()
+
+	local query = vim.treesitter.query.parse(
+		"xml",
+		[[
+        (element
+            (STag
+                (Name) @name
+                (Attribute
+                    (Name) @attr_name
+                    (AttValue) @attr_value
+                    (#eq? @attr_name "id")))
+            (#any-of? @name "select" "insert" "update" "delete"))
+    ]]
+	)
+
+	local found_node = nil
+	for _, match in query:iter_matches(root, bufnr, 0, -1) do
+		local value_nodes = match[3]
+		if value_nodes and #value_nodes > 0 then
+			local value_node = value_nodes[1]
+			local sql_id = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+			if sql_id == method then
+				found_node = match[1][1]
+				break
+			end
+		end
+	end
+
+	if not found_node then
+		vim.api.nvim_buf_delete(bufnr, { force = true })
+	end
+	return found_node
 end
 
 return M
