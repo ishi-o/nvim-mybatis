@@ -1,7 +1,7 @@
 local M = {}
 
 local config = require("nvim-mybatis.config"):get()
-local uv = vim.loop or vim.uv
+local uv = vim.uv or vim.loop
 
 --- check if the filename matches config.mapper_name_pattern
 --- @param bufnr? integer
