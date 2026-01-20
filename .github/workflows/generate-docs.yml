@@ -28,15 +28,6 @@ jobs:
         with:
           vimdoc: nvim-mybatis
 
-      - name: Download and generate API docs
-        run: |
-          curl -Lq https://github.com/numToStr/lemmy-help/releases/latest/download/lemmy-help-x86_64-unknown-linux-gnu.tar.gz | tar xz
-          find lua/nvim-mybatis -name '*.lua' | while read lua_file; do
-            module_name=$(echo "$lua_file" | sed 's|^lua/nvim-mybatis/||; s|\.lua$||; s|/|.|g')
-            ./lemmy-help -c -f "$lua_file" > "doc/$module_name.txt"
-            sed -i 's/^\*M\./*nvim-mybatis./g; s/^M\./nvim-mybatis./g; s/|M\./|nvim-mybatis./g; s/`M\./`nvim-mybatis./g' "doc/$module_name.txt"
-          done
-
       - name: Install Neovim
         run: |
           sudo apt update

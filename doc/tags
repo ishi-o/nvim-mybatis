@@ -1,3 +1,9 @@
-M.get	nvim-mybatis.config.txt	/*M.get*
-M.setup	nvim-mybatis.config.txt	/*M.setup*
-M.setup	nvim-mybatis.txt	/*M.setup*
+nvim-mybatis-nvim-mybatis	nvim-mybatis.txt	/*nvim-mybatis-nvim-mybatis*
+nvim-mybatis-nvim-mybatis-⚙️-configuration	nvim-mybatis.txt	/*nvim-mybatis-nvim-mybatis-⚙️-configuration*
+nvim-mybatis-nvim-mybatis-✨-features	nvim-mybatis.txt	/*nvim-mybatis-nvim-mybatis-✨-features*
+nvim-mybatis-nvim-mybatis-📄-license	nvim-mybatis.txt	/*nvim-mybatis-nvim-mybatis-📄-license*
+nvim-mybatis-nvim-mybatis-📝-notes	nvim-mybatis.txt	/*nvim-mybatis-nvim-mybatis-📝-notes*
+nvim-mybatis-nvim-mybatis-📦-installation	nvim-mybatis.txt	/*nvim-mybatis-nvim-mybatis-📦-installation*
+nvim-mybatis-nvim-mybatis-🤝-contributing	nvim-mybatis.txt	/*nvim-mybatis-nvim-mybatis-🤝-contributing*
+nvim-mybatis-table-of-contents	nvim-mybatis.txt	/*nvim-mybatis-table-of-contents*
+nvim-mybatis.txt	nvim-mybatis.txt	/*nvim-mybatis.txt*
