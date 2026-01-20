@@ -1,4 +1,4 @@
---- @module 'nvim-mybatis.completion'
+--- @module 'mybatis.completion'
 --- @class MyBatisSource: blink.cmp.Source
 --- @field config table
 --- @field opts table
@@ -203,7 +203,7 @@ function source:get_completions(ctx, callback)
 end
 
 function source:enabled()
-	if vim.bo.filetype ~= "xml" or not utils.is_mybatis_file() then
+	if not utils.is_xml_mybatis_file() then
 		return false
 	end
 	local node = vim.treesitter.get_node()

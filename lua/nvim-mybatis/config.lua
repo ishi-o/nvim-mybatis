@@ -1,7 +1,7 @@
 local M = {}
 
 --- @class NvimMybatisConfig
---- @field enabled? boolean Enable nvim-mybatis
+--- @field autocmd? boolean Enable nvim-mybatis
 --- @field xml_search_pattern? string[] Patterns to search for XML files
 --- @field mapper_name_pattern? string[] Patterns to identify Mapper files for plugin loading
 --- @field classpath? string[] Relative paths from classpath to project root
@@ -12,7 +12,7 @@ local M = {}
 
 --- @type NvimMybatisConfig
 local DEFAULT_CONFIG = {
-	enabled = true,
+	autocmd = true,
 	xml_search_pattern = {
 		"**/*Mapper*.xml",
 	},

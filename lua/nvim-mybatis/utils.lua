@@ -1,7 +1,9 @@
 local M = {}
 
-local config = require("nvim-mybatis.config"):get()
 local uv = vim.uv or vim.loop
+
+local config = require("nvim-mybatis.config"):get()
+local ts = require("nvim-mybatis.treesitter")
 
 --- check if the filename matches config.mapper_name_pattern
 --- @param bufnr? integer
@@ -15,6 +17,20 @@ function M.is_mybatis_file(bufnr)
 		end
 	end
 	return false
+end
+
+--- check if the file is java and mybatis file
+--- @param bufnr? integer
+--- @return boolean
+function M.is_java_mybatis_file(bufnr)
+	return vim.bo.filetype == "java" and M.is_mybatis_file(bufnr)
+end
+
+--- check if the file is xml and mybatis file
+--- @param bufnr? integer
+--- @return boolean
+function M.is_xml_mybatis_file(bufnr)
+	return vim.bo.filetype == "xml" and M.is_mybatis_file(bufnr)
 end
 
 --- get project / module root dir
@@ -117,6 +133,24 @@ function M.scan_java_classes(dir_path, current_pkg, exclude_dirs)
 	end
 
 	return classes
+end
+
+--- @return string? pkg_name
+function M.get_pkgname(bufnr)
+	local parser = vim.treesitter.get_parser(bufnr, "java")
+	if not parser then
+		return nil
+	end
+	local package_name
+	local root = parser:parse()[1]:root()
+	local query = ts.parse(ts.get_package_query())
+	for _, match in query:iter_matches(root, bufnr, 0, -1) do
+		if match[1] and #match[1] > 0 then
+			package_name = vim.treesitter.get_node_text(match[1][1], bufnr)
+			break
+		end
+	end
+	return package_name
 end
 
 return M

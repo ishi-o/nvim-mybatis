@@ -1,6 +1,13 @@
+--- @module 'mybatis.treesitter'
+
+--- @class Query
+--- @field lang string
+--- @field query string
+
 local M = {}
 
 local utils = require("nvim-mybatis.utils")
+local ts = vim.treesitter
 
 --- locate interface
 function M.locate_interface()
@@ -13,13 +20,7 @@ function M.locate_interface()
 	local tree = parser:parse()[1]
 	local root = tree:root()
 
-	local query = vim.treesitter.query.parse(
-		"java",
-		[[
-        (interface_declaration name: (identifier) @name)
-        (class_declaration name: (identifier) @name)
-    ]]
-	)
+	local query = M.parse(M.get_interface_query())
 
 	for _, node in query:iter_captures(root, bufnr, 0, -1) do
 		local row, col, _, _ = node:range()
@@ -40,13 +41,7 @@ function M.locate_method(method)
 	local tree = parser:parse()[1]
 	local root = tree:root()
 
-	local query = vim.treesitter.query.parse("java", [[
-        (method_declaration
-          name: (identifier) @method_name
-          (#eq? @method_name "]] .. method .. [[")
-        )
-    ]])
-
+	local query = M.parse(M.get_method_query(method))
 	for _, node in query:iter_captures(root, bufnr, 0, -1) do
 		local row, col, _, _ = node:range()
 		vim.api.nvim_win_set_cursor(0, { row + 1, col })
@@ -66,15 +61,7 @@ function M.get_class(node, bufnr)
 		return nil
 	end
 
-	local query = vim.treesitter.query.parse(
-		"xml",
-		[[
-        ((Attribute
-          (Name) @attr_name
-          (AttValue) @attr_value)
-          (#any-of? @attr_name "resultType" "parameterType" "type" "namespace"))
-    ]]
-	)
+	local query = M.parse(M.get_xmltype_query())
 
 	for _, match in query:iter_matches(parent, bufnr, 0, -1) do
 		local name_nodes = match[1] -- @attr_name
@@ -104,15 +91,7 @@ function M.get_sql_id(node, bufnr)
 		return nil
 	end
 
-	local query = vim.treesitter.query.parse(
-		"xml",
-		[[
-        ((Attribute
-          (Name) @attr_name
-          (AttValue) @attr_value)
-          (#eq? @attr_name "id"))
-    ]]
-	)
+	local query = M.parse(M.get_xmlid_query())
 
 	for _, match in query:iter_matches(parent, bufnr, 0, -1) do
 		local name_nodes = match[1] -- @attr_name
@@ -205,15 +184,7 @@ function M.try_get_namespace(filename, clsname)
 	end
 
 	local root = parser:parse()[1]:root()
-	local query = vim.treesitter.query.parse(
-		"xml",
-		[[
-        (Attribute
-         (Name) @name
-         (AttValue) @value
-         (#eq? @name "namespace"))
-    ]]
-	)
+	local query = M.parse(M.get_xmlnamespace_query())
 
 	local found_node = nil
 	for _, match in query:iter_matches(root, bufnr, 0, -1) do
@@ -268,19 +239,7 @@ function M.try_get_sql_id(filename, method)
 
 	local root = parser:parse()[1]:root()
 
-	local query = vim.treesitter.query.parse(
-		"xml",
-		[[
-        (element
-            (STag
-                (Name) @name
-                (Attribute
-                    (Name) @attr_name
-                    (AttValue) @attr_value
-                    (#eq? @attr_name "id")))
-            (#any-of? @name "select" "insert" "update" "delete"))
-    ]]
-	)
+	local query = M.parse(M.get_xmlcrud_query())
 
 	local found_node = nil
 	for _, match in query:iter_matches(root, bufnr, 0, -1) do
@@ -299,6 +258,147 @@ function M.try_get_sql_id(filename, method)
 		vim.api.nvim_buf_delete(bufnr, { force = true })
 	end
 	return found_node
+end
+
+--- get interface and method node
+--- @return TSNode?
+--- @return TSNode?
+function M.get_interface_method_node()
+	if not utils.is_java_mybatis_file() then
+		return nil, nil
+	end
+	local node = ts.get_node()
+	if not node then
+		return nil, nil
+	end
+	local interface_node, method_node
+	local current = node
+
+	while current do
+		local node_type = current:type()
+		if not interface_node and node_type == "interface_declaration" then
+			interface_node = current
+		end
+		if not method_node and node_type == "method_declaration" then
+			method_node = current
+		end
+
+		current = current:parent()
+	end
+
+	return interface_node, method_node
+end
+
+--- @return Query query
+function M.get_package_query()
+	return {
+		lang = "java",
+		query = [[
+		(package_declaration
+			(scoped_identifier) @pkg)
+	]],
+	}
+end
+
+--- @return Query query
+function M.get_interface_query()
+	return {
+		lang = "java",
+		query = [[
+        (interface_declaration name: (identifier) @name)
+        (class_declaration name: (identifier) @name)
+	]],
+	}
+end
+
+--- @param method string
+--- @return Query query
+function M.get_method_query(method)
+	return {
+		lang = "java",
+		query = [[
+        (method_declaration
+          name: (identifier) @method_name
+          (#eq? @method_name "]] .. method .. [[")
+		]],
+	}
+end
+
+--- @return Query query
+function M.get_xmltype_query()
+	return {
+		lang = "xml",
+		query = [[
+        ((Attribute
+          (Name) @attr_name
+          (AttValue) @attr_value)
+          (#any-of? @attr_name ]] .. table.concat(
+			vim.tbl_map(function(t)
+				return '"' .. t .. '"'
+			end, M.get_xmltypes()),
+			" "
+		) .. [[))
+    ]],
+	}
+end
+
+--- @return string[] xmltypes
+function M.get_xmltypes()
+	return {
+		"resultType",
+		"parameterType",
+		"type",
+		"namespace",
+	}
+end
+
+--- @return Query query
+function M.get_xmlid_query()
+	return {
+		lang = "xml",
+		query = [[
+        ((Attribute
+          (Name) @attr_name
+          (AttValue) @attr_value)
+          (#eq? @attr_name "id"))
+    ]],
+	}
+end
+
+--- @return Query query
+function M.get_xmlnamespace_query()
+	return {
+		lang = "xml",
+		query = [[
+        (Attribute
+         (Name) @name
+         (AttValue) @value
+         (#eq? @name "namespace"))
+    ]],
+	}
+end
+
+--- @return Query query
+function M.get_xmlcrud_query()
+	return {
+		lang = "xml",
+		query = [[
+        (element
+            (STag
+                (Name) @name
+                (Attribute
+                    (Name) @attr_name
+                    (AttValue) @attr_value
+                    (#eq? @attr_name "id")))
+            (#any-of? @name "select" "insert" "update" "delete"))
+    ]],
+	}
+end
+
+--- @param query Query
+--- @return vim.treesitter.Query
+function M.parse(query)
+	return vim.treesitter.query.parse(query.lang, query.query)
 end
 
 return M

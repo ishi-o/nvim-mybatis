@@ -84,65 +84,18 @@ end
 --- @param bufnr integer
 --- @return boolean?
 function M.goto_xml(bufnr)
-	local cursor = vim.api.nvim_win_get_cursor(0)
-	local row, col = cursor[1] - 1, cursor[2]
-	local parser = vim.treesitter.get_parser(bufnr, "java")
-	if not parser then
-		return nil
-	end
-
-	local root = parser:parse()[1]:root()
-	local node = root:named_descendant_for_range(row, col, row, col)
-	if not node or node:type() ~= "identifier" then
-		return nil
-	end
-
-	local current = node:parent()
-	local interface_name, method_name, has_valid_scope
-
-	while current do
-		local node_type = current:type()
-
-		if not has_valid_scope and (node_type == "interface_declaration" or node_type == "method_declaration") then
-			has_valid_scope = true
+	local interface_name, method_name
+	local interface, method = ts.get_interface_method_node()
+	if interface then
+		interface_name = vim.treesitter.get_node_text(interface, bufnr)
+		if method then
+			method_name = vim.treesitter.get_node_text(method, bufnr)
 		end
-
-		if node_type == "interface_declaration" and not interface_name then
-			interface_name = vim.treesitter.get_node_text(node, bufnr)
-		elseif node_type == "method_declaration" and not method_name then
-			method_name = vim.treesitter.get_node_text(node, bufnr)
-
-			local temp = current:parent()
-			while temp and temp:type() ~= "interface_declaration" do
-				temp = temp:parent()
-			end
-			if temp then
-				local name_node = temp:field("name")[1]
-				if name_node then
-					interface_name = vim.treesitter.get_node_text(name_node, bufnr)
-				end
-			end
-		end
-
-		current = current:parent()
-	end
-
-	if not has_valid_scope or not interface_name then
+	else
 		return nil
 	end
 
-	local package_name
-	local query = vim.treesitter.query.parse("java", [[(package_declaration (scoped_identifier) @pkg)]])
-	for _, match in query:iter_matches(root, bufnr, 0, -1) do
-		if match[1] and #match[1] > 0 then
-			package_name = vim.treesitter.get_node_text(match[1][1], bufnr)
-			break
-		end
-	end
-	if not package_name then
-		return nil
-	end
-
+	local package_name = utils.get_pkgname(bufnr)
 	local clsname = package_name .. "." .. interface_name
 	return method_name and M.goto_sql_id(clsname, method_name) or M.goto_namespace(clsname)
 end
