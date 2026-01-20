@@ -9,60 +9,41 @@ on:
       - ".github/workflows/generate-docs.yml"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   generate-docs:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Clean doc directory (only keep .txt files)
+      - name: Clean doc directory
         run: |
           mkdir -p doc
-          find doc -maxdepth 1 -type f ! -name "*.txt" ! -name "tags" -delete
+          find doc -maxdepth 1 -type f ! -name '*.txt' ! -name 'tags' -delete
 
-      - name: Install panvimdoc
-        run: |
-          git clone https://app4.secure.forcepoint.com/kdheepak/panvimdoc.git /tmp/panvimdoc
-          cd /tmp/panvimdoc && pip install -r requirements.txt
-          sudo cp /tmp/panvimdoc/panvimdoc.py /usr/local/bin/panvimdoc
-          sudo chmod +x /usr/local/bin/panvimdoc
-          panvimdoc --help 2>&1 | head -5
+      - name: Convert README.md with panvimdoc
+        uses: kdheepak/panvimdoc@main
+        with:
+          vimdoc: nvim-mybatis
 
-      - name: Convert README.md to doc/nvim-mybatis.txt (panvimdoc)
+      - name: Download and generate API docs
         run: |
-          panvimdoc -i README.md -o doc/nvim-mybatis.txt --project "nvim-mybatis"
-
-      - name: Download latest lemmy-help
-        run: |
-          curl -L -o lemmy-help.tar.gz https://github.com/numToStr/lemmy-help/releases/latest/download/lemmy-help-x86_64-unknown-linux-gnu.tar.gz
-          tar -xzf lemmy-help.tar.gz
-          chmod +x lemmy-help
-          ./lemmy-help --version
-
-      - name: Generate API docs for each Lua file (lemmy-help)
-        run: |
-          find lua/nvim-mybatis -name "*.lua" | while read lua_file; do
+          curl -Lq https://github.com/numToStr/lemmy-help/releases/latest/download/lemmy-help-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          find lua/nvim-mybatis -name '*.lua' | while read lua_file; do
             module_name=$(echo "$lua_file" | sed 's|^lua/nvim-mybatis/||; s|\.lua$||; s|/|.|g')
-            output_file="doc/$module_name.txt"
-            ./lemmy-help -c -f "$lua_file" > "$output_file"
-            sed -i.bak '
-              s/^\*M\./*nvim-mybatis./g
-              s/^M\./nvim-mybatis./g
-              s/|M\./|nvim-mybatis./g
-              s/`M\./`nvim-mybatis./g
-            ' "$output_file"
-            rm -f "$output_file.bak"
+            ./lemmy-help -c -f "$lua_file" > "doc/$module_name.txt"
+            sed -i 's/^\*M\./*nvim-mybatis./g; s/^M\./nvim-mybatis./g; s/|M\./|nvim-mybatis./g; s/`M\./`nvim-mybatis./g' "doc/$module_name.txt"
           done
 
       - name: Generate help tags
-        run: |
-          nvim --headless -c "helptags doc/" -c "quit" 2>/dev/null
+        run: nvim --headless -c 'helptags doc/' -c 'quit' 2>/dev/null
 
       - name: Commit generated documentation
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "docs: update vimdocs"
+          commit_message: "chore(docs): auto-generate vimdoc"
           file_pattern: |
             doc/*.txt
             doc/tags
