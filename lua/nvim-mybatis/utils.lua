@@ -1,9 +1,7 @@
 local M = {}
 
 local uv = vim.uv or vim.loop
-
 local config = require("nvim-mybatis.config"):get()
-local ts = require("nvim-mybatis.treesitter")
 
 --- check if the filename matches config.mapper_name_pattern
 --- @param bufnr? integer
@@ -22,14 +20,14 @@ end
 --- check if the file is java and mybatis file
 --- @param bufnr? integer
 --- @return boolean
-function M.is_java_mybatis_file(bufnr)
+function M.is_mybatis_java(bufnr)
 	return vim.bo.filetype == "java" and M.is_mybatis_file(bufnr)
 end
 
 --- check if the file is xml and mybatis file
 --- @param bufnr? integer
 --- @return boolean
-function M.is_xml_mybatis_file(bufnr)
+function M.is_mybatis_xml(bufnr)
 	return vim.bo.filetype == "xml" and M.is_mybatis_file(bufnr)
 end
 
@@ -43,25 +41,6 @@ function M.get_module_root()
 		end
 	end
 	return nil
-end
-
---- Log a message.
---- @param msg string Message to log
---- @param level? integer Log level from `vim.log.levels` (default: INFO)
-function M.log(msg, level)
-	level = level or vim.log.levels.INFO
-	vim.notify("[MyBatis] " .. msg, level)
-end
-
---- Log a message with conditional `debug` config filtering.
---- @param msg string Message to log
---- @param level? integer Log level from `vim.log.levels` (default: INFO)
-function M.debug(msg, level)
-	if not config.debug then
-		return
-	end
-	level = level or vim.log.levels.INFO
-	vim.notify("[MyBatis] " .. msg, level)
 end
 
 --- get java builtin types
@@ -135,22 +114,16 @@ function M.scan_java_classes(dir_path, current_pkg, exclude_dirs)
 	return classes
 end
 
---- @return string? pkg_name
-function M.get_pkgname(bufnr)
-	local parser = vim.treesitter.get_parser(bufnr, "java")
-	if not parser then
-		return nil
-	end
-	local package_name
-	local root = parser:parse()[1]:root()
-	local query = ts.parse(ts.get_package_query())
-	for _, match in query:iter_matches(root, bufnr, 0, -1) do
-		if match[1] and #match[1] > 0 then
-			package_name = vim.treesitter.get_node_text(match[1][1], bufnr)
-			break
+--- @param func fun(classpath: string): boolean?
+--- @return boolean
+function M.foreach_classpath(func)
+	local project_root = M.get_module_root()
+	for _, classpath in ipairs(config.classpath) do
+		if func(project_root .. "/" .. classpath .. "/") then
+			return true
 		end
 	end
-	return package_name
+	return false
 end
 
 return M

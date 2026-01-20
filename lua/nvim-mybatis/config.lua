@@ -1,16 +1,8 @@
+--- @module 'mybatis.config'
+
 local M = {}
 
---- @class NvimMybatisConfig
---- @field autocmd? boolean Enable nvim-mybatis
---- @field xml_search_pattern? string[] Patterns to search for XML files
---- @field mapper_name_pattern? string[] Patterns to identify Mapper files for plugin loading
---- @field classpath? string[] Relative paths from classpath to project root
---- @field root_file? string[] Root build files
---- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" Refresh strategy
---- @field polling_interval? integer Polling interval
---- @field debug? boolean Enable debug mode
-
---- @type NvimMybatisConfig
+--- @type mybatis.NvimMybatisConfig
 local DEFAULT_CONFIG = {
 	autocmd = true,
 	xml_search_pattern = {
@@ -32,16 +24,16 @@ local DEFAULT_CONFIG = {
 	debug = false,
 }
 
---- @type NvimMybatisConfig
+--- @type mybatis.NvimMybatisConfig
 M.values = DEFAULT_CONFIG
 
---- @param config NvimMybatisConfig?
+--- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
 	M.values = vim.tbl_deep_extend("force", M.values, config or {})
 	return M
 end
 
---- @return NvimMybatisConfig
+--- @return mybatis.NvimMybatisConfig
 function M.get()
 	return M.values
 end

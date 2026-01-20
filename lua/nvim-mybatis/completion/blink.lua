@@ -1,11 +1,6 @@
---- @module 'mybatis.completion'
---- @class MyBatisSource: blink.cmp.Source
---- @field config table
---- @field opts table
---- @field cache table
---- @field watchers table
+--- @module 'mybatis.completion.blink'
 
---- @type MyBatisSource
+--- @type mybatis.completion.blink.MyBatisSource
 local source = {}
 
 local uv = vim.uv or vim.loop
@@ -203,7 +198,7 @@ function source:get_completions(ctx, callback)
 end
 
 function source:enabled()
-	if not utils.is_xml_mybatis_file() then
+	if not utils.is_mybatis_xml() then
 		return false
 	end
 	local node = vim.treesitter.get_node()
