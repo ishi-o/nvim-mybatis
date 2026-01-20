@@ -1,0 +1,13 @@
+source.new()                                                        *source.new*
+
+
+source:get_completions()                                *source:get_completions*
+
+
+source:enabled()                                                *source:enabled*
+
+
+source:get_trigger_characters()                  *source:get_trigger_characters*
+
+
+vim:tw=78:ts=8:noet:ft=help:norl:

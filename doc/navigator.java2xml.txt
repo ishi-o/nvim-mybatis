@@ -1,0 +1,20 @@
+nvim-mybatis.navigate_xml()                                                *M.navigate_xml*
+     from java to xml
+     @param bufnr integer
+     @return boolean
+
+
+nvim-mybatis.navigate_namespace()                                    *M.navigate_namespace*
+     navigate namespace (java to xml)
+     @param clsname string
+     @return boolean
+
+
+nvim-mybatis.navigate_sqlid()                                            *M.navigate_sqlid*
+     navigate sql id (java to xml)
+     @param clsname string
+     @param method string
+     @return boolean
+
+
+vim:tw=78:ts=8:noet:ft=help:norl:
