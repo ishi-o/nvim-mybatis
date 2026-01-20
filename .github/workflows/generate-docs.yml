@@ -37,6 +37,11 @@ jobs:
             sed -i 's/^\*M\./*nvim-mybatis./g; s/^M\./nvim-mybatis./g; s/|M\./|nvim-mybatis./g; s/`M\./`nvim-mybatis./g' "doc/$module_name.txt"
           done
 
+      - name: Install Neovim
+        run: |
+          sudo apt update
+          sudo apt install -y neovim
+
       - name: Generate help tags
         run: nvim --headless -c 'helptags doc/' -c 'quit' 2>/dev/null
 
