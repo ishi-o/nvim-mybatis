@@ -22,7 +22,12 @@ jobs:
           find doc -maxdepth 1 -type f ! -name "*.txt" ! -name "tags" -delete
 
       - name: Install panvimdoc
-        run: pip install panvimdoc
+        run: |
+          git clone https://app4.secure.forcepoint.com/kdheepak/panvimdoc.git /tmp/panvimdoc
+          cd /tmp/panvimdoc && pip install -r requirements.txt
+          sudo cp /tmp/panvimdoc/panvimdoc.py /usr/local/bin/panvimdoc
+          sudo chmod +x /usr/local/bin/panvimdoc
+          panvimdoc --help 2>&1 | head -5
 
       - name: Convert README.md to doc/nvim-mybatis.txt (panvimdoc)
         run: |
@@ -57,7 +62,7 @@ jobs:
       - name: Commit generated documentation
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "docs: auto-generate vimdoc (separate files)"
+          commit_message: "docs: update vimdocs"
           file_pattern: |
             doc/*.txt
             doc/tags
