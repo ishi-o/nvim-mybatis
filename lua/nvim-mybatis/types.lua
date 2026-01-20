@@ -17,5 +17,5 @@
 --- @field classpath? string[] Relative paths from classpath to project root
 --- @field root_file? string[] Root build files
 --- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" Refresh strategy
---- @field polling_interval? integer Polling interval
+--- @field polling_interval? integer Polling interval (ms)
 --- @field debug? boolean Enable debug mode
