@@ -1,9 +1,10 @@
 local M = {}
 
-local utils = require("nvim-mybatis.utils")
-local gotos = require("nvim-mybatis.gotos")
 local autocmd = vim.api.nvim_create_autocmd
 local map = vim.keymap.set
+local utils = require("nvim-mybatis.utils")
+local navigator = require("nvim-mybatis.navigator")
+local logger = require("nvim-mybatis.logger")
 
 function M.setup()
 	autocmd("FileType", {
@@ -14,14 +15,14 @@ function M.setup()
 				return
 			end
 			map("n", "gd", function()
-				if not gotos.goto_java(bufnr) then
+				if not navigator.xml2java.navigate_java(bufnr) then
 					vim.lsp.buf.definition()
 				end
 			end, {
 				buffer = bufnr,
 				desc = "Mybatis: jump to Java class or method",
 			})
-			utils.log("XML file loaded successfully")
+			logger.info("XML file loaded successfully")
 		end,
 	})
 	autocmd("FileType", {
@@ -32,14 +33,14 @@ function M.setup()
 				return
 			end
 			map("n", "gd", function()
-				if not gotos.goto_xml(bufnr) then
+				if not navigator.java2xml.navigate_xml(bufnr) then
 					vim.lsp.buf.definition()
 				end
 			end, {
 				buffer = bufnr,
 				desc = "Mybatis: jump to XML tags",
 			})
-			utils.log("Java file loaded successfully")
+			logger.info("Java file loaded successfully")
 		end,
 	})
 end
