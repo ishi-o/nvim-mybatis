@@ -3,23 +3,9 @@ local M = {}
 
 local ts = vim.treesitter
 local logger = require("nvim-mybatis.logger")
-
-local TYPE_ATTRS = {
-	["namespace"] = true,
-	["resultType"] = true,
-	["parameterType"] = true,
-	["type"] = true,
-	["javaType"] = true,
-	["ofType"] = true,
-	["typeHandler"] = true,
-}
-
-local CRUD_TAGS = {
-	["select"] = true,
-	["update"] = true,
-	["delete"] = true,
-	["insert"] = true,
-}
+local conf = require("nvim-mybatis.config")
+local TYPE_ATTRS = conf.TYPE_ATTRS
+local CRUD_TAGS = conf.CRUD_TAGS
 
 --- extract class name
 --- @param node TSNode

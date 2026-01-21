@@ -4,8 +4,9 @@
 local source = {}
 
 local uv = vim.uv or vim.loop
+local conf = require("nvim-mybatis.config")
+local config = conf:get()
 local utils = require("nvim-mybatis.utils")
-local config = require("nvim-mybatis.config"):get()
 
 function source.new(opts, src_config)
 	local self = setmetatable({}, { __index = source })
@@ -215,7 +216,7 @@ function source:enabled()
 	end
 	local bufnr = vim.api.nvim_get_current_buf()
 	local attr_name = vim.treesitter.get_node_text(name_node, bufnr)
-	return attr_name == "resultType" or attr_name == "parameterType" or attr_name == "namespace"
+	return conf.TYPE_ATTRS[attr_name] or false
 end
 
 function source:get_trigger_characters()
