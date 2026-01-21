@@ -10,7 +10,7 @@ function M.package()
 		query = [[
 			(package_declaration
 				(scoped_identifier) @pkg)
-	]],
+		]],
 	}
 end
 
@@ -21,7 +21,22 @@ function M.interface()
 		query = [[
 			(interface_declaration name: (identifier) @name)
 			(class_declaration name: (identifier) @name)
+		]],
+	}
+end
+
+function M.field(field)
+	return {
+		lang = "java",
+		query = string.format(
+			[[
+				(field_declaration
+				  declarator: (variable_declarator
+					name: (identifier) @field_name
+					(#eq? @field_name "%s")))
 			]],
+			field
+		),
 	}
 end
 

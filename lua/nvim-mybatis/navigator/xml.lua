@@ -58,6 +58,22 @@ function M.navigate_from_xml(bufnr)
 			end
 		end
 	end
+	-- if the cursor on `property` attribute
+	local clsname, property = treesitter.extract.property(node, bufnr)
+	if clsname and property then
+		local file_path = clsname:gsub("%.", "/") .. ".java"
+		return utils.foreach_classpath(function(classpath)
+			if vim.fn.filereadable(classpath .. file_path) == 1 then
+				vim.cmd("edit " .. vim.fn.fnameescape(classpath .. file_path))
+				vim.defer_fn(function()
+					if not treesitter.locate(treesitter.query.field(property)) then
+						logger.warn("Class not found")
+					end
+				end, 50)
+				return true
+			end
+		end)
+	end
 	logger.info("Not a valid MyBatis jump target")
 	return false
 end

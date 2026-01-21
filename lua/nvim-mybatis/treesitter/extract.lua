@@ -163,4 +163,72 @@ function M.resultMap(node, bufnr)
 	return nil
 end
 
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string? namespace
+--- @return string? property
+function M.property(node, bufnr)
+	local current = node
+	local property_value = nil
+
+	while current do
+		if current:type() == "Attribute" then
+			local name_node = current:named_child(0)
+			if name_node then
+				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
+				if name_text == "property" then
+					local value_node = current:named_child(1)
+					if value_node then
+						property_value = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+						break
+					end
+				end
+			end
+		end
+		current = current:parent()
+	end
+
+	if not property_value then
+		return nil, nil
+	end
+
+	current = current or node
+
+	while current do
+		if current:type() == "element" then
+			for child in current:iter_children() do
+				if child:type() == "STag" then
+					local tag_name_node = child:named_child(0)
+					if tag_name_node then
+						local tag_name = vim.treesitter.get_node_text(tag_name_node, bufnr)
+						if tag_name == "resultMap" then
+							for attr in child:iter_children() do
+								if attr:type() == "Attribute" then
+									local attr_name_node = attr:named_child(0)
+									if attr_name_node then
+										local attr_name = vim.treesitter.get_node_text(attr_name_node, bufnr)
+										if attr_name == "type" then
+											local attr_value_node = attr:named_child(1)
+											if attr_value_node then
+												local type_value = vim.treesitter
+													.get_node_text(attr_value_node, bufnr)
+													:gsub("['\"]", "")
+												return type_value, property_value
+											end
+										end
+									end
+								end
+							end
+							return nil, nil
+						end
+					end
+				end
+			end
+		end
+		current = current:parent()
+	end
+
+	return nil, nil
+end
+
 return M
