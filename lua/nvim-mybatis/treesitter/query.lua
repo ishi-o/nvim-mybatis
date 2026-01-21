@@ -99,6 +99,26 @@ function M.crud_id(method)
 	}
 end
 
+--- @param resultMap string value without double quotes
+--- @return mybatis.treesitter.Query
+function M.resultMap(resultMap)
+	return {
+		lang = "xml",
+		query = string.format(
+			[[
+			(STag
+			  (Name) @tag_name
+			  (Attribute
+				(Name) @attr_name
+				(AttValue) @attr_value
+				(#eq? @tag_name "resultMap")
+				(#eq? @attr_value "\"%s\"")))
+			]],
+			resultMap
+		),
+	}
+end
+
 --- @param query mybatis.treesitter.Query
 --- @return vim.treesitter.Query
 function M.parse(query)

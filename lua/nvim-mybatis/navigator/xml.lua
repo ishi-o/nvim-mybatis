@@ -42,6 +42,22 @@ function M.navigate_from_xml(bufnr)
 			end
 		end
 	end
+	-- if the cursor on `extends` attribute
+	local resultMap = treesitter.extract.resultMap(node, bufnr)
+	if resultMap then
+		if resultMap:find("%.") == nil then
+			return treesitter.locate(treesitter.query.resultMap(resultMap))
+		else
+			local namespace, resMap = resultMap:match("^(.*)%.([^%.]+)$")
+			local files = utils.search_mapper(namespace)
+			if files and #files > 0 then
+				vim.cmd("edit " .. files[1])
+				vim.defer_fn(function()
+					treesitter.locate(treesitter.query.resultMap(resMap))
+				end, 50)
+			end
+		end
+	end
 	logger.info("Not a valid MyBatis jump target")
 	return false
 end

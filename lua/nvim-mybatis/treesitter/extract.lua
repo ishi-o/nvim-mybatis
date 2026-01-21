@@ -137,4 +137,30 @@ function M.refid(node, bufnr)
 	return nil
 end
 
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string?
+function M.resultMap(node, bufnr)
+	local current = node
+
+	while current do
+		if current:type() == "Attribute" then
+			local name_node = current:named_child(0)
+			if name_node then
+				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
+				if name_text == "extends" or name_text == "resultMap" then
+					local value_node = current:named_child(1)
+					if value_node then
+						local text = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+						return text
+					end
+				end
+			end
+		end
+		current = current:parent()
+	end
+
+	return nil
+end
+
 return M
