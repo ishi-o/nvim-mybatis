@@ -2,6 +2,7 @@ local M = {}
 
 local uv = vim.uv or vim.loop
 local config = require("nvim-mybatis.config"):get()
+local logger = require("nvim-mybatis.logger")
 
 --- check if the filename matches config.mapper_name_pattern
 --- @param bufnr? integer
@@ -124,6 +125,38 @@ function M.foreach_classpath(func)
 		end
 	end
 	return false
+end
+
+--- search mappers.xml by namespace
+--- @param namespace string
+--- @return string[]? files
+function M.search_mapper(namespace)
+	local project_root = M.get_module_root()
+	local xml_files = {}
+	for _, xml_glob in ipairs(config.xml_search_pattern) do
+		local search_path = project_root .. "/" .. xml_glob
+		local files = vim.fn.glob(search_path, true, true)
+		vim.list_extend(xml_files, files)
+	end
+	if #xml_files == 0 then
+		logger.warn("No XML files found for mapper: " .. namespace)
+		return nil
+	end
+
+	local namespace_pattern = string.format("'namespace=\"%s\"'", namespace)
+	local candidate_files = {}
+	local cmd = { "rg", "-l", "--color=never", "--fixed-strings", namespace_pattern }
+	for _, file in ipairs(xml_files) do
+		table.insert(cmd, file)
+	end
+	local handle = io.popen(table.concat(cmd, " "))
+	if handle then
+		for line in handle:lines() do
+			table.insert(candidate_files, line)
+		end
+		handle:close()
+	end
+	return candidate_files
 end
 
 return M

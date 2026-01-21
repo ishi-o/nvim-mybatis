@@ -6,15 +6,23 @@
 
 ## ✨ 功能特性
 
-### 🔄 **双向导航**
+### 🔄 **导航**
 
-- **XML → Java**:
-  - 从 `namespace`、`resultType`、`parameterType`、`type`、`javaType` 或 `ofType` 属性跳转到对应的 Java 接口或类。
-  - 从 SQL 标签 (`<select>`、`<insert>`、`<update>`、`<delete>`) 的 `id` 属性跳转到对应的 Java 方法。
+#### XML → Java
 
-- **Java → XML**:
-  - 从 Mapper 接口跳转到其 XML 文件中对应的 `namespace` 声明处。
-  - 从接口中的方法跳转到 XML 文件中对应的 SQL 标签处。
+- 从 MyBatis XML 类型属性跳转到其对应的 Java 类型，支持的属性包括：`namespace`, `resultType`, `parameterType`, `type`, `javaType`, `ofType`, `typeHandler`。
+- 从 SQL 语句标签的 `id` 属性跳转到 Mapper 接口中对应的方法。
+- 从 `<result property="...">` 标签跳转到其 Java 实体类中的对应字段。
+
+#### Java 代码 → XML 映射文件
+
+- 从 Mapper 接口跳转到其 XML 文件中的 `<mapper namespace="...">` 声明处。
+- 从 Mapper 接口方法跳转到 XML 文件中对应的 SQL 语句标签处。
+
+#### XML → XML 导航
+
+- 从 `<include refid="...">` 标签跳转到其目标 `<sql id="...">` 定义处，支持简单引用和全限定引用。
+- 从 `<resultMap extends="...">` 或 `<select resultMap="...">` 标签跳转到其目标 `<resultMap>` 定义处。
 
 ### 🎯 **智能代码补全**
 

@@ -36,7 +36,7 @@ end
 --- @param node TSNode
 --- @param bufnr integer
 --- @return string? method
-function M.sqlid(node, bufnr)
+function M.crud_id(node, bufnr)
 	local current = node
 	while current and current:type() ~= "Attribute" do
 		current = current:parent()
@@ -109,6 +109,151 @@ function M.belong_namespace(node, bufnr)
 	end
 
 	return nil
+end
+
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string?
+function M.refid(node, bufnr)
+	local current = node
+
+	while current do
+		if current:type() == "Attribute" then
+			local name_node = current:named_child(0)
+			if name_node then
+				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
+				if name_text == "refid" then
+					local value_node = current:named_child(1)
+					if value_node then
+						local text = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+						return text
+					end
+				end
+			end
+		end
+		current = current:parent()
+	end
+
+	return nil
+end
+
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string?
+function M.resultMap(node, bufnr)
+	local current = node
+
+	while current do
+		if current:type() == "Attribute" then
+			local name_node = current:named_child(0)
+			if name_node then
+				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
+				if name_text == "extends" or name_text == "resultMap" then
+					local value_node = current:named_child(1)
+					if value_node then
+						local text = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+						return text
+					end
+				end
+			end
+		end
+		current = current:parent()
+	end
+
+	return nil
+end
+
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string? namespace
+--- @return string? property
+function M.property(node, bufnr)
+	local current = node
+	local property_value = nil
+
+	while current do
+		if current:type() == "Attribute" then
+			local name_node = current:named_child(0)
+			if name_node then
+				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
+				if name_text == "property" then
+					local value_node = current:named_child(1)
+					if value_node then
+						property_value = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+						break
+					end
+				end
+			end
+		end
+		current = current:parent()
+	end
+
+	if not property_value then
+		return nil, nil
+	end
+
+	current = current or node
+
+	while current do
+		if current:type() == "element" then
+			for child in current:iter_children() do
+				if child:type() == "STag" then
+					local tag_name_node = child:named_child(0)
+					if tag_name_node then
+						local tag_name = vim.treesitter.get_node_text(tag_name_node, bufnr)
+						if tag_name == "resultMap" then
+							for attr in child:iter_children() do
+								if attr:type() == "Attribute" then
+									local attr_name_node = attr:named_child(0)
+									if attr_name_node then
+										local attr_name = vim.treesitter.get_node_text(attr_name_node, bufnr)
+										if attr_name == "type" then
+											local attr_value_node = attr:named_child(1)
+											if attr_value_node then
+												local type_value = vim.treesitter
+													.get_node_text(attr_value_node, bufnr)
+													:gsub("['\"]", "")
+												return type_value, property_value
+											end
+										end
+									end
+								end
+							end
+							return nil, nil
+						end
+					end
+				end
+			end
+		end
+		current = current:parent()
+	end
+
+	return nil, nil
+end
+
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string? interface
+--- @return string? method
+function M.interface_method(node, bufnr)
+	local interface, method
+	local current = node
+
+	while current do
+		local node_type = current:type()
+		if not interface and node_type == "interface_declaration" then
+			interface = ts.get_node_text(current:field("name")[1], bufnr)
+		end
+		if not method and node_type == "method_declaration" then
+			method = ts.get_node_text(current:field("name")[1], bufnr)
+		end
+		if interface and method then
+			return interface, method
+		end
+		current = current:parent()
+	end
+
+	return interface, method
 end
 
 return M
