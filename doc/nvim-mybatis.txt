@@ -1,4 +1,4 @@
-*nvim-mybatis.txt*         For NVIM v0.8.0        Last change: 2026 January 20
+*nvim-mybatis.txt*         For NVIM v0.8.0        Last change: 2026 January 21
 
 ==============================================================================
 Table of Contents                             *nvim-mybatis-table-of-contents*
