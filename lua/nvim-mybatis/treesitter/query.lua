@@ -8,8 +8,8 @@ function M.package()
 	return {
 		lang = "java",
 		query = [[
-		(package_declaration
-			(scoped_identifier) @pkg)
+			(package_declaration
+				(scoped_identifier) @pkg)
 	]],
 	}
 end
@@ -19,9 +19,9 @@ function M.interface()
 	return {
 		lang = "java",
 		query = [[
-        (interface_declaration name: (identifier) @name)
-        (class_declaration name: (identifier) @name)
-	]],
+			(interface_declaration name: (identifier) @name)
+			(class_declaration name: (identifier) @name)
+			]],
 	}
 end
 
@@ -36,37 +36,9 @@ function M.method(method)
                 name: (identifier) @method_name
                 (#eq? @method_name "%s")
             )
-        ]],
+			]],
 			method
 		),
-	}
-end
-
---- @return mybatis.treesitter.Query query
-function M.attr_types()
-	return {
-		lang = "xml",
-		query = [[
-        ((Attribute
-          (Name) @attr_name
-          (AttValue) @attr_value)
-          (#any-of? @attr_name ]] .. table.concat(
-			vim.tbl_map(function(t)
-				return '"' .. t .. '"'
-			end, M.xmltypes()),
-			" "
-		) .. [[))
-    ]],
-	}
-end
-
---- @return string[] xmltypes
-function M.xmltypes()
-	return {
-		"resultType",
-		"parameterType",
-		"type",
-		"namespace",
 	}
 end
 
@@ -77,15 +49,52 @@ function M.sqlid(sqlid)
 		lang = "xml",
 		query = string.format(
 			[[
-		(STag
-          (Name) @tag_name
-          (Attribute
-            (Name) @attr_name
-            (AttValue) @attr_value
-			(#eq? @tag_name "sql")
-			(#eq? @attr_value "\"%s\"")))
-		]],
+			(STag
+			  (Name) @tag_name
+			  (Attribute
+				(Name) @attr_name
+				(AttValue) @attr_value
+				(#eq? @tag_name "sql")
+				(#eq? @attr_value "\"%s\"")))
+			]],
 			sqlid
+		),
+	}
+end
+
+--- @param namespace string
+--- @return mybatis.treesitter.Query
+function M.namespace(namespace)
+	return {
+		lang = "xml",
+		query = string.format(
+			[[
+			(STag
+				(Name) @tag_name (#eq? @tag_name "mapper")
+				(Attribute
+					(Name) @attr_name (#eq? @attr_name "namespace")
+					(AttValue) @attr_value (#eq? @attr_value "\"%s\"")
+				) @namespace_attr
+			) @mapper_tag
+			]],
+			namespace
+		),
+	}
+end
+
+--- @param method string
+--- @return mybatis.treesitter.Query
+function M.crud_id(method)
+	return {
+		lang = "xml",
+		query = string.format(
+			[[
+			(Attribute
+				(Name) @attr_name (#eq? @attr_name "id")
+				(AttValue) @attr_value (#eq? @attr_value "\"%s\"")
+			)
+			]],
+			method
 		),
 	}
 end

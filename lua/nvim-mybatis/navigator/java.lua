@@ -25,47 +25,20 @@ function M.navigate_xml(bufnr)
 end
 
 --- navigate namespace (java to xml)
---- @param clsname string
+--- @param namespace string
 --- @return boolean
-function M.navigate_namespace(clsname)
-	local candidate_files = utils.search_mapper(clsname)
+function M.navigate_namespace(namespace)
+	local candidate_files = utils.search_mapper(namespace)
 	if not candidate_files or #candidate_files == 0 then
-		logger.warn(string.format("No mapper found for namespace: '%s'", clsname))
+		logger.warn(string.format("No mapper found for namespace: '%s'", namespace))
 		return false
 	end
 	local target_file = candidate_files[1]
-	local bufnr = vim.fn.bufadd(target_file)
 	vim.cmd("edit " .. vim.fn.fnameescape(target_file))
-	vim.fn.bufload(bufnr)
-	local parser = vim.treesitter.get_parser(bufnr, "xml")
-	local tree = parser:parse()[1]
-	local root = tree:root()
-
-	local query_string = string.format(
-		[[
-    (STag
-        (Name) @tag_name (#eq? @tag_name "mapper")
-        (Attribute
-            (Name) @attr_name (#eq? @attr_name "namespace")
-            (AttValue) @attr_value (#eq? @attr_value "\"%s\"")
-        ) @namespace_attr
-    ) @mapper_tag
-]],
-		clsname
-	)
-	local query = vim.treesitter.query.parse("xml", query_string)
-
-	for id, node, _ in query:iter_captures(root, bufnr, 0, -1) do
-		local capture_name = query.captures[id]
-		if capture_name == "attr_value" then
-			local row, col = node:range()
-			vim.api.nvim_win_set_cursor(0, { row + 1, col })
-			return true
-		end
-	end
-
-	vim.api.nvim_buf_delete(bufnr, { force = true })
-	logger.warn(string.format("Class '%s' not found", clsname))
+	vim.defer_fn(function()
+		treesitter.locate(treesitter.query.namespace(namespace))
+	end, 50)
+	logger.warn(string.format("Class '%s' not found", namespace))
 	return false
 end
 
@@ -80,35 +53,10 @@ function M.navigate_crud(clsname, method)
 		return false
 	end
 	local target_file = candidate_files[1]
-	local bufnr = vim.fn.bufadd(target_file)
 	vim.cmd("edit " .. vim.fn.fnameescape(target_file))
-	vim.fn.bufload(bufnr)
-	local parser = vim.treesitter.get_parser(bufnr, "xml")
-	local tree = parser:parse()[1]
-	local root = tree:root()
-
-	local query_string = string.format(
-		[[
-        (Attribute
-            (Name) @attr_name (#eq? @attr_name "id")
-            (AttValue) @attr_value (#eq? @attr_value "\"%s\"")
-        )
-    ]],
-		method
-	)
-
-	local query = vim.treesitter.query.parse("xml", query_string)
-
-	for id, node, _ in query:iter_captures(root, bufnr, 0, -1) do
-		local capture_name = query.captures[id]
-		if capture_name == "attr_value" then
-			local row, col = node:range()
-			vim.api.nvim_win_set_cursor(0, { row + 1, col })
-			return true
-		end
-	end
-
-	vim.api.nvim_buf_delete(bufnr, { force = true })
+	vim.defer_fn(function()
+		treesitter.locate(treesitter.query.crud_id(method))
+	end, 50)
 	logger.warn(string.format("Method '%s' not found in mapper '%s'", method, clsname))
 	return false
 end
