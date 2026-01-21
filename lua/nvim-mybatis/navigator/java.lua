@@ -8,7 +8,7 @@ local logger = require("nvim-mybatis.logger")
 --- from java to xml
 --- @param bufnr integer
 --- @return boolean
-function M.navigate_xml(bufnr)
+function M.navigate_from_java(bufnr)
 	local interface_name, method_name
 	local interface, method = treesitter.find.find_interface_method()
 	if interface then

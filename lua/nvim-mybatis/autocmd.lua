@@ -15,7 +15,7 @@ function M.setup()
 				return
 			end
 			map("n", "gd", function()
-				if not navigator.xml.navigate_java(bufnr) then
+				if not navigator.xml.navigate_from_xml(bufnr) then
 					vim.lsp.buf.definition()
 				end
 			end, {
@@ -33,7 +33,7 @@ function M.setup()
 				return
 			end
 			map("n", "gd", function()
-				if not navigator.java.navigate_xml(bufnr) then
+				if not navigator.java.navigate_from_java(bufnr) then
 					vim.lsp.buf.definition()
 				end
 			end, {
