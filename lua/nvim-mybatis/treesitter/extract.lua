@@ -11,6 +11,7 @@ local TYPE_ATTRS = {
 	["type"] = true,
 	["javaType"] = true,
 	["ofType"] = true,
+	["typeHandler"] = true,
 }
 
 local CRUD_TAGS = {
@@ -18,7 +19,6 @@ local CRUD_TAGS = {
 	["update"] = true,
 	["delete"] = true,
 	["insert"] = true,
-	["sql"] = true,
 }
 
 --- extract class name
