@@ -29,7 +29,7 @@ function M.navigate_java(bufnr)
 	-- if the cursor on `refid` attribute
 	local refid = treesitter.extract.refid(node, bufnr)
 	if refid then
-		return treesitter.locate.locate_sqlid(refid)
+		return treesitter.locate(treesitter.query.sqlid(refid))
 	end
 	logger.info("Not a valid MyBatis jump target")
 	return false
@@ -44,7 +44,7 @@ function M.navigate_class(clsname)
 		if vim.fn.filereadable(classpath .. file_path) == 1 then
 			vim.cmd("edit " .. vim.fn.fnameescape(classpath .. file_path))
 			vim.defer_fn(function()
-				if not treesitter.locate.locate_interface() then
+				if not treesitter.locate(treesitter.query.interface()) then
 					logger.warn("Class not found")
 				end
 			end, 50)
@@ -63,7 +63,7 @@ function M.navigate_method(clsname, method)
 		if vim.fn.filereadable(classpath .. file_path) == 1 then
 			vim.cmd("edit " .. vim.fn.fnameescape(classpath .. file_path))
 			vim.defer_fn(function()
-				if not treesitter.locate.locate_method(method) then
+				if not treesitter.locate(treesitter.query.method(method)) then
 					logger.warn("Method not found")
 				end
 			end, 50)

@@ -70,19 +70,6 @@ function M.xmltypes()
 	}
 end
 
---- @return mybatis.treesitter.Query query
-function M.attr_namespace()
-	return {
-		lang = "xml",
-		query = [[
-        (Attribute
-         (Name) @name
-         (AttValue) @value
-         (#eq? @name "namespace"))
-    ]],
-	}
-end
-
 --- @param sqlid string value without double quotes
 --- @return mybatis.treesitter.Query
 function M.sqlid(sqlid)
