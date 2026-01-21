@@ -38,4 +38,21 @@ function M.get()
 	return M.values
 end
 
+M.TYPE_ATTRS = {
+	["namespace"] = true,
+	["resultType"] = true,
+	["parameterType"] = true,
+	["type"] = true,
+	["javaType"] = true,
+	["ofType"] = true,
+	["typeHandler"] = true,
+}
+
+M.CRUD_TAGS = {
+	["select"] = true,
+	["update"] = true,
+	["delete"] = true,
+	["insert"] = true,
+}
+
 return M
