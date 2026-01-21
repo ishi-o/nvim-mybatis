@@ -6,15 +6,23 @@ A lightweight Neovim plugin powered by Tree-sitter for enhanced navigation betwe
 
 ## ✨ Features
 
-### 🔄 **Bi-directional Navigation**
+### 🔄 **Navigation**
 
-- **XML → Java**:
-  - From `namespace`, `resultType`, `parameterType`, `type`, `javaType`, or `ofType` attributes to their corresponding Java interface or class.
-  - From SQL tag `id` attribute (`<select>`, `<insert>`, `<update>`, `<delete>`) to corresponding Java method.
+#### XML Mapping File → Java Code
 
-- **Java → XML**:
-  - From Mapper interface to XML file's `namespace` declaration.
-  - From interface method to corresponding SQL tag in XML.
+- Navigate from MyBatis XML type attributes to their corresponding Java types, supporting attributes: `namespace`, `resultType`, `parameterType`, `type`, `javaType`, `ofType`, `typeHandler`.
+- Navigate from the `id` attribute of SQL statement tags to the corresponding method in the Mapper interface.
+- Navigate from a `<result property="...">` tag to the corresponding field in its Java entity class.
+
+#### Java Code → XML Mapping File
+
+- Navigate from a Mapper interface to the `<mapper namespace="...">` declaration in its XML file.
+- Navigate from a Mapper interface method to its corresponding SQL statement tag in the XML file.
+
+#### XML → XML Navigation
+
+- Navigate from an `<include refid="...">` tag to its target `<sql id="...">` definition, supporting both simple and fully-qualified references.
+- Navigate from a `<resultMap extends="...">` or `<select resultMap="...">` tag to its target `<resultMap>` definition.
 
 ### 🎯 **Intelligent Code Completion**
 
@@ -102,7 +110,7 @@ local DEFAULT_CONFIG = {
 
 ## 📝 Notes
 
-- **Tree-sitter Dependency**: Requires Java and XML parsers (`:TSInstall java xml`)
+- **treesitter Dependency**: Requires Java and XML parsers (`:TSInstall java xml`)
 - **ripgrep Dependency**: The plugin relies on ripgrep (rg) for fast file searching and indexing.
 - **File Pattern Matching**: `mapper_name_pattern` controls which files activate the plugin's navigation features
 - **Project Detection**: Searches upward for `root_file` patterns to locate project boundaries
