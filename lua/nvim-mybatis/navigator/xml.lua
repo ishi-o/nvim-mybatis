@@ -16,14 +16,14 @@ function M.navigate_from_xml(bufnr)
 	-- if the cursor on `namespace` attribute
 	local clsname = treesitter.extract.classname(node, bufnr)
 	if clsname then
-		return M.navigate_class(clsname)
+		return treesitter.navigate(clsname:gsub("%.", "/") .. ".java", treesitter.query.interface())
 	end
 	-- if the cursor on sql tag and `id` attribute
 	local crud_id = treesitter.extract.crud_id(node, bufnr)
 	if crud_id then
 		local current_namespace = treesitter.extract.belong_namespace(node, bufnr)
 		if current_namespace then
-			return M.navigate_method(current_namespace, crud_id)
+			return treesitter.navigate(current_namespace:gsub("%.", "/") .. ".java", treesitter.query.method(crud_id))
 		end
 	end
 	-- if the cursor on `refid` attribute
@@ -33,13 +33,7 @@ function M.navigate_from_xml(bufnr)
 			return treesitter.locate(treesitter.query.sqlid(refid))
 		else
 			local namespace, sql_id = refid:match("^(.*)%.([^%.]+)$")
-			local files = utils.search_mapper(namespace)
-			if files and #files > 0 then
-				vim.cmd("edit " .. files[1])
-				vim.defer_fn(function()
-					treesitter.locate(treesitter.query.sqlid(sql_id))
-				end, 50)
-			end
+			return treesitter.navigate_mapper(namespace, treesitter.query.sqlid(sql_id))
 		end
 	end
 	-- if the cursor on `extends` attribute
@@ -49,70 +43,15 @@ function M.navigate_from_xml(bufnr)
 			return treesitter.locate(treesitter.query.resultMap(resultMap))
 		else
 			local namespace, resMap = resultMap:match("^(.*)%.([^%.]+)$")
-			local files = utils.search_mapper(namespace)
-			if files and #files > 0 then
-				vim.cmd("edit " .. files[1])
-				vim.defer_fn(function()
-					treesitter.locate(treesitter.query.resultMap(resMap))
-				end, 50)
-			end
+			return treesitter.navigate_mapper(namespace, treesitter.query.resultMap(resMap))
 		end
 	end
 	-- if the cursor on `property` attribute
 	local clsname, property = treesitter.extract.property(node, bufnr)
 	if clsname and property then
-		local file_path = clsname:gsub("%.", "/") .. ".java"
-		return utils.foreach_classpath(function(classpath)
-			if vim.fn.filereadable(classpath .. file_path) == 1 then
-				vim.cmd("edit " .. vim.fn.fnameescape(classpath .. file_path))
-				vim.defer_fn(function()
-					if not treesitter.locate(treesitter.query.field(property)) then
-						logger.warn("Class not found")
-					end
-				end, 50)
-				return true
-			end
-		end)
+		return treesitter.navigate(clsname:gsub("%.", "/") .. ".java", treesitter.query.field(property))
 	end
-	logger.info("Not a valid MyBatis jump target")
 	return false
-end
-
---- navigate class position (xml to java)
---- @param clsname string
---- @return boolean
-function M.navigate_class(clsname)
-	local file_path = clsname:gsub("%.", "/") .. ".java"
-	return utils.foreach_classpath(function(classpath)
-		if vim.fn.filereadable(classpath .. file_path) == 1 then
-			vim.cmd("edit " .. vim.fn.fnameescape(classpath .. file_path))
-			vim.defer_fn(function()
-				if not treesitter.locate(treesitter.query.interface()) then
-					logger.warn("Class not found")
-				end
-			end, 50)
-			return true
-		end
-	end)
-end
-
---- navigate method position (xml to java)
---- @param clsname string
---- @param method string
---- @return boolean
-function M.navigate_method(clsname, method)
-	local file_path = clsname:gsub("%.", "/") .. ".java"
-	return utils.foreach_classpath(function(classpath)
-		if vim.fn.filereadable(classpath .. file_path) == 1 then
-			vim.cmd("edit " .. vim.fn.fnameescape(classpath .. file_path))
-			vim.defer_fn(function()
-				if not treesitter.locate(treesitter.query.method(method)) then
-					logger.warn("Method not found")
-				end
-			end, 50)
-			return true
-		end
-	end)
 end
 
 return M

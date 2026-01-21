@@ -1,7 +1,9 @@
 local M = {}
 
+local utils = require("nvim-mybatis.utils")
+local logger = require("nvim-mybatis.logger")
+
 M.extract = require("nvim-mybatis.treesitter.extract")
-M.find = require("nvim-mybatis.treesitter.find")
 M.query = require("nvim-mybatis.treesitter.query")
 M.scan = require("nvim-mybatis.treesitter.scan")
 
@@ -16,6 +18,44 @@ function M.locate(qry, bufnr)
 	for _, node in M.query.iter_query(bufnr, qry.lang, M.query.parse(qry)) do
 		local row, col = node:range()
 		vim.api.nvim_win_set_cursor(0, { row + 1, col })
+		return true
+	end
+	return false
+end
+
+--- open and edit `filepath` (relative to classpath), `query` to locate
+--- @param filepath string
+--- @param query mybatis.treesitter.Query
+--- @param msg? string
+--- @return boolean
+function M.navigate(filepath, query, msg)
+	return utils.foreach_classpath(function(classpath)
+		if vim.fn.filereadable(classpath .. filepath) == 1 then
+			vim.cmd("edit " .. vim.fn.fnameescape(classpath .. filepath))
+			vim.defer_fn(function()
+				if not M.locate(query) then
+					logger.warn(msg or "Invalid navigate")
+				end
+			end, 50)
+			return true
+		end
+	end)
+end
+
+--- search `namespace`, `query` to locate
+--- @param namespace string
+--- @param query mybatis.treesitter.Query
+--- @param msg? string
+--- @return boolean
+function M.navigate_mapper(namespace, query, msg)
+	local files = utils.search_mapper(namespace)
+	if files and #files > 0 then
+		vim.cmd("edit " .. vim.fn.fnameescape(files[1]))
+		vim.defer_fn(function()
+			if not M.locate(query) then
+				logger.warn(msg or "Invalid navigate")
+			end
+		end, 50)
 		return true
 	end
 	return false

@@ -231,4 +231,29 @@ function M.property(node, bufnr)
 	return nil, nil
 end
 
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string? interface
+--- @return string? method
+function M.interface_method(node, bufnr)
+	local interface, method
+	local current = node
+
+	while current do
+		local node_type = current:type()
+		if not interface and node_type == "interface_declaration" then
+			interface = ts.get_node_text(current:field("name")[1], bufnr)
+		end
+		if not method and node_type == "method_declaration" then
+			method = ts.get_node_text(current:field("name")[1], bufnr)
+		end
+		if interface and method then
+			return interface, method
+		end
+		current = current:parent()
+	end
+
+	return interface, method
+end
+
 return M
