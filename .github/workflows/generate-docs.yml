@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "lua/**"
       - "README.md"
       - ".github/workflows/generate-docs.yml"
   workflow_dispatch:
