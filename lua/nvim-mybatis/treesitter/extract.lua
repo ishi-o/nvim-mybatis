@@ -36,7 +36,7 @@ end
 --- @param node TSNode
 --- @param bufnr integer
 --- @return string? method
-function M.sqlid(node, bufnr)
+function M.crud_id(node, bufnr)
 	local current = node
 	while current and current:type() ~= "Attribute" do
 		current = current:parent()
@@ -108,6 +108,13 @@ function M.belong_namespace(node, bufnr)
 		current = current:parent()
 	end
 
+	return nil
+end
+
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string?
+function M.refid(node, bufnr)
 	return nil
 end
 

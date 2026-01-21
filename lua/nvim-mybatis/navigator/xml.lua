@@ -19,14 +19,18 @@ function M.navigate_java(bufnr)
 		return M.navigate_class(clsname)
 	end
 	-- if the cursor on sql tag and `id` attribute
-	local sql_id = treesitter.extract.sqlid(node, bufnr)
+	local sql_id = treesitter.extract.crud_id(node, bufnr)
 	if sql_id then
 		local current_namespace = treesitter.extract.belong_namespace(node, bufnr)
 		if current_namespace then
 			return M.navigate_method(current_namespace, sql_id)
 		end
 	end
-
+	-- if the cursor on `refid` attribute
+	local refid = treesitter.extract.refid(node, bufnr)
+	if refid then
+		return treesitter.locate.locate_sqlid(refid)
+	end
 	logger.info("Not a valid MyBatis jump target")
 	return false
 end

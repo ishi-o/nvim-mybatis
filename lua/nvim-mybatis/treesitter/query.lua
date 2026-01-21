@@ -83,6 +83,26 @@ function M.attr_namespace()
 	}
 end
 
+--- @param sqlid string value without double quotes
+--- @return mybatis.treesitter.Query
+function M.sqlid(sqlid)
+	return {
+		lang = "xml",
+		query = string.format(
+			[[
+		(STag
+          (Name) @tag_name
+          (Attribute
+            (Name) @attr_name
+            (AttValue) @attr_value
+			(#eq? @tag_name "sql")
+			(#eq? @attr_value "\"%s\"")))
+		]],
+			sqlid
+		),
+	}
+end
+
 --- @param query mybatis.treesitter.Query
 --- @return vim.treesitter.Query
 function M.parse(query)

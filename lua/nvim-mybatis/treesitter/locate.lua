@@ -33,9 +33,24 @@ function M.locate_interface(bufnr)
 	M.locate_buf(bufnr)
 	local qry = query.parse(query.interface())
 	for _, node in query.iter_query(bufnr, "java", qry) do
-		local row, col, _, _ = node:range()
+		local row, col = node:range()
 		vim.api.nvim_win_set_cursor(0, { row + 1, col })
 		return true
+	end
+	return false
+end
+
+--- locate refid's source
+--- @param refid string
+--- @param bufnr? integer
+--- @return boolean success
+function M.locate_sqlid(refid, bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	M.locate_buf(bufnr)
+	local qry = query.parse(query.sqlid(refid))
+	for _, node in query.iter_query(bufnr, "xml", qry) do
+		local row, col = node:range()
+		vim.api.nvim_win_set_cursor(0, { row + 1, col })
 	end
 	return false
 end
