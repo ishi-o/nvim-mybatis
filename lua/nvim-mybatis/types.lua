@@ -19,3 +19,8 @@
 --- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" Refresh strategy
 --- @field polling_interval? integer Polling interval (ms)
 --- @field debug? boolean Enable debug mode
+
+--- @class mybatis.action.CrudTagArgs
+--- @field interface string
+--- @field method string
+--- @field bufnr integer

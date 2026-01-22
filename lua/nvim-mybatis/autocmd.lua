@@ -9,6 +9,7 @@ local logger = require("nvim-mybatis.logger")
 function M.setup()
 	autocmd("FileType", {
 		pattern = "xml",
+		group = vim.api.nvim_create_augroup("MyBatis", {}),
 		callback = function(args)
 			local bufnr = args.buf
 			if not utils.is_mybatis_file(bufnr) then
@@ -27,6 +28,7 @@ function M.setup()
 	})
 	autocmd("FileType", {
 		pattern = "java",
+		group = vim.api.nvim_create_augroup("MyBatis", {}),
 		callback = function(args)
 			local bufnr = args.buf
 			if not utils.is_mybatis_file(bufnr) then
