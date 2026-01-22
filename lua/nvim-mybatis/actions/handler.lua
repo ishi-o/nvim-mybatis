@@ -8,9 +8,10 @@ local snippet = require("nvim-mybatis.actions.snippet")
 --- Core generation function: generate MyBatis tag
 --- @param args mybatis.action.CrudTagArgs
 function M.generate_tag(args)
-	local interface, method, bufnr
+	local interface, method, resultType, bufnr
 	interface = args.interface
 	method = args.method
+	resultType = args.resultType
 	bufnr = args.bufnr
 	interface = treesitter.scan.package(bufnr) .. "." .. interface
 	local xml_file = utils.search_mapper(interface)
@@ -31,7 +32,7 @@ function M.generate_tag(args)
 		vim.api.nvim_set_current_buf(target_bufnr)
 		vim.api.nvim_win_set_cursor(0, { insert_line + 1, 0 })
 
-		vim.snippet.expand(snippet.select(method, "resultType"))
+		vim.snippet.expand(snippet.select(method, resultType))
 
 		local filename = vim.fn.fnamemodify(xml_file, ":t")
 		logger.log(string.format("Generated select statement for %s.%s in %s", interface, method, filename))

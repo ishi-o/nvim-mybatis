@@ -27,6 +27,13 @@ function M.generate_tag(range, context, bufnr)
 		return nil
 	end
 
+	--- @type mybatis.action.CrudTagArgs
+	local args = {
+		interface = interface,
+		method = method,
+		resultType = treesitter.extract.resultType(node, bufnr) or "resultType",
+		bufnr = bufnr,
+	}
 	return {
 		title = CA_TITLE,
 		--- @type lsp.CodeActionKind
@@ -36,12 +43,7 @@ function M.generate_tag(range, context, bufnr)
 			title = CA_TITLE,
 			command = CMD,
 			arguments = {
-				--- @type mybatis.action.CrudTagArgs
-				{
-					interface = interface,
-					method = method,
-					bufnr = bufnr,
-				},
+				args,
 			},
 		},
 	}

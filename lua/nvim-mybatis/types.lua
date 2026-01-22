@@ -23,4 +23,5 @@
 --- @class mybatis.action.CrudTagArgs
 --- @field interface string interface name
 --- @field method string method name
+--- @field resultType string `resultType` attribute
 --- @field bufnr integer Java source file buffer number
