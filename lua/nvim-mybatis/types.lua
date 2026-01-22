@@ -19,3 +19,9 @@
 --- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" Refresh strategy
 --- @field polling_interval? integer Polling interval (ms)
 --- @field debug? boolean Enable debug mode
+
+--- @class mybatis.action.CrudTagArgs
+--- @field interface string interface name
+--- @field method string method name
+--- @field resultType string `resultType` attribute
+--- @field bufnr integer Java source file buffer number

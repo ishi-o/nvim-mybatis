@@ -140,27 +140,52 @@ end
 --- @param node TSNode
 --- @param bufnr integer
 --- @return string?
-function M.resultMap(node, bufnr)
-	local current = node
-
-	while current do
-		if current:type() == "Attribute" then
-			local name_node = current:named_child(0)
-			if name_node then
-				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
-				if name_text == "extends" or name_text == "resultMap" then
-					local value_node = current:named_child(1)
-					if value_node then
-						local text = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
-						return text
-					end
-				end
-			end
-		end
-		current = current:parent()
+function M.resultType(node, bufnr)
+	local method_node = node
+	while method_node and method_node:type() ~= "method_declaration" do
+		method_node = method_node:parent()
+	end
+	if not method_node then
+		return nil
+	end
+	local type_node = method_node:field("type")[1]
+	if not type_node then
+		return nil
 	end
 
-	return nil
+	local function parse_type(type_node)
+		local node_type = type_node:type()
+		if node_type == "type_identifier" then
+			return vim.treesitter.get_node_text(type_node, bufnr)
+		elseif node_type == "generic_type" then
+			-- type_identifier
+			local container_node = type_node:named_child(0)
+			if not container_node then
+				return nil
+			end
+			local container_name = vim.treesitter.get_node_text(container_node, bufnr)
+			-- type_arguments
+			local type_args_node = type_node:named_child(1)
+			if not type_args_node then
+				return container_name
+			end
+			-- List or Set
+			if container_name == "List" or container_name == "Set" then
+				local first_arg = type_args_node:named_child(0)
+				return first_arg and parse_type(first_arg) or nil
+			-- Map
+			elseif container_name == "Map" then
+				local value_arg = type_args_node:named_child(1)
+				return value_arg and parse_type(value_arg) or nil
+			-- other customize generic type
+			else
+				return container_name
+			end
+		end
+
+		return nil
+	end
+	return parse_type(type_node)
 end
 
 --- @param node TSNode
@@ -255,5 +280,10 @@ function M.interface_method(node, bufnr)
 
 	return interface, method
 end
+
+--- @param node TSNode
+--- @param bufnr integer
+--- @return string? resultType
+function M.resultTypeFromJava(node, bufnr) end
 
 return M

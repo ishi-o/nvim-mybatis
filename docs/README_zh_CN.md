@@ -28,6 +28,11 @@
 
 - **[blink.cmp](https://github.com/Saghen/blink.cmp) 集成**: 为 `namespace`、`resultType`、`parameterType`、`type`、`javaType` 和 `ofType` 属性提供包含包名/类名建议的自动补全。
 
+### **代码操作（`Code Action`）**
+
+- `nvim-mybatis` 会将`Code Action`注入到名为`jdtls`的语言服务器中。符合条件的条目会在调用`vim.lsp.buf.code_action`时提供，这需要一个已连接的`jdtls`服务器。
+- `Generate MyBatis Tag`：当光标指向 Mapper 接口中的一个方法时，此操作会智能判断`CRUD`类型，并在相关联的`XML`文件中生成对应的`XML tag`代码片段。
+
 ## 📦 安装
 
 <details>

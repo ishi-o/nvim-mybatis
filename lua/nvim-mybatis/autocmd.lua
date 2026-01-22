@@ -7,8 +7,10 @@ local navigator = require("nvim-mybatis.navigator")
 local logger = require("nvim-mybatis.logger")
 
 function M.setup()
+	local group = vim.api.nvim_create_augroup("MyBatis", {})
 	autocmd("FileType", {
 		pattern = "xml",
+		group = group,
 		callback = function(args)
 			local bufnr = args.buf
 			if not utils.is_mybatis_file(bufnr) then
@@ -20,13 +22,14 @@ function M.setup()
 				end
 			end, {
 				buffer = bufnr,
-				desc = "Mybatis: jump to Java class or method",
+				desc = "Mybatis: navigate from XML",
 			})
 			logger.info("XML file loaded successfully")
 		end,
 	})
 	autocmd("FileType", {
 		pattern = "java",
+		group = group,
 		callback = function(args)
 			local bufnr = args.buf
 			if not utils.is_mybatis_file(bufnr) then
@@ -38,7 +41,7 @@ function M.setup()
 				end
 			end, {
 				buffer = bufnr,
-				desc = "Mybatis: jump to XML tags",
+				desc = "Mybatis: navigate from java",
 			})
 			logger.info("Java file loaded successfully")
 		end,

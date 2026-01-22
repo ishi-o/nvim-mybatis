@@ -48,9 +48,9 @@ end
 --- @param msg? string
 --- @return boolean
 function M.navigate_mapper(namespace, query, msg)
-	local files = utils.search_mapper(namespace)
-	if files and #files > 0 then
-		vim.cmd("edit " .. vim.fn.fnameescape(files[1]))
+	local file = utils.search_mapper(namespace)
+	if file then
+		vim.cmd("edit " .. vim.fn.fnameescape(file))
 		vim.defer_fn(function()
 			if not M.locate(query) then
 				logger.warn(msg or "Invalid navigate")
