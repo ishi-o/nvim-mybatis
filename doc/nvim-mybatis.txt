@@ -1,4 +1,4 @@
-*nvim-mybatis.txt*         For NVIM v0.8.0        Last change: 2026 January 21
+*nvim-mybatis.txt*         For NVIM v0.8.0        Last change: 2026 January 22
 
 ==============================================================================
 Table of Contents                             *nvim-mybatis-table-of-contents*
@@ -48,6 +48,12 @@ XML → XML NAVIGATION
 🎯 INTELLIGENT CODE COMPLETION ~
 
 - **blink.cmp Integration**: Auto-completion for `namespace`, `resultType`, `parameterType`, `type`, `javaType`, or `ofType` attributes with package/class suggestions
+
+
+CODE ACTION ~
+
+- `nvim-mybatis` injects `Code Action` into the language server named `jdtls`. Qualified entries will be provided when `vim.lsp.buf.code_action` is invoked, which requires a connected `jdtls` server.
+- `Generate MyBatis Tag`: When the cursor points to a method in a Mapper interface, this action intelligently determines the `CRUD` type and generates the corresponding `XML tag` snippet in the associated `XML` file.
 
 
 📦 INSTALLATION                *nvim-mybatis-nvim-mybatis-📦-installation*
