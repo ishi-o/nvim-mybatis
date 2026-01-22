@@ -6,26 +6,11 @@ local query = require("nvim-mybatis.treesitter.query")
 
 --- @return string? pkg_name
 function M.package(bufnr)
-	local parser = vim.treesitter.get_parser(bufnr, "java")
-	if not parser then
-		return nil
+	local qry = query.package()
+	for _, node in query.iter_query(bufnr, qry.lang, query.parse(qry)) do
+		return vim.treesitter.get_node_text(node, bufnr)
 	end
-	local package_name
-	local root = parser:parse()[1]:root()
-	local query = vim.treesitter.query.parse(
-		"java",
-		[[
-			(package_declaration
-				(scoped_identifier) @pkg)
-	]]
-	)
-	for _, match in query:iter_matches(root, bufnr, 0, -1) do
-		if match[1] and #match[1] > 0 then
-			package_name = vim.treesitter.get_node_text(match[1][1], bufnr)
-			break
-		end
-	end
-	return package_name
+	return nil
 end
 
 return M

@@ -21,6 +21,6 @@
 --- @field debug? boolean Enable debug mode
 
 --- @class mybatis.action.CrudTagArgs
---- @field interface string
---- @field method string
---- @field bufnr integer
+--- @field interface string interface name
+--- @field method string method name
+--- @field bufnr integer Java source file buffer number

@@ -2,6 +2,13 @@ local M = {}
 
 local ts = vim.treesitter
 local treesitter = require("nvim-mybatis.treesitter")
+local handler = require("nvim-mybatis.actions.handler")
+
+--- All support commands
+--- @type table<string, function>
+M.SUPPORT_CMDS = {
+	["mybatis.generate_tag"] = handler.generate_tag,
+}
 
 --- CodeAction: Generate MyBatis Tag
 --- @param range lsp.Range
@@ -10,8 +17,7 @@ local treesitter = require("nvim-mybatis.treesitter")
 --- @return lsp.CodeAction?
 function M.generate_tag(range, context, bufnr)
 	local CA_TITLE = "Generate MyBatis Tag"
-	local cmd = "mybatis.generate_tag"
-	local kind = "refactor"
+	local CMD = "mybatis.generate_tag"
 	local node = ts.get_node()
 	if not node then
 		return nil
@@ -23,10 +29,12 @@ function M.generate_tag(range, context, bufnr)
 
 	return {
 		title = CA_TITLE,
-		kind = kind,
+		--- @type lsp.CodeActionKind
+		kind = "refactor",
+		--- @type lsp.Command
 		command = {
 			title = CA_TITLE,
-			command = cmd,
+			command = CMD,
 			arguments = {
 				--- @type mybatis.action.CrudTagArgs
 				{

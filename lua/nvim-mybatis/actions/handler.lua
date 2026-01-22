@@ -6,10 +6,12 @@ local logger = require("nvim-mybatis.logger")
 local snippet = require("nvim-mybatis.actions.snippet")
 
 --- Core generation function: generate MyBatis tag
---- @param interface string interface name
---- @param method string method name
---- @param bufnr integer Java source file buffer number
-function M.generate_tag(interface, method, bufnr)
+--- @param args mybatis.action.CrudTagArgs
+function M.generate_tag(args)
+	local interface, method, bufnr
+	interface = args.interface
+	method = args.method
+	bufnr = args.bufnr
 	interface = treesitter.scan.package(bufnr) .. "." .. interface
 	local xml_file = utils.search_mapper(interface)
 	if not xml_file then

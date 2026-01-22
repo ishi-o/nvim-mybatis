@@ -2,7 +2,7 @@ local M = {}
 
 local utils = require("nvim-mybatis.utils")
 local generator = require("nvim-mybatis.actions.generator")
-local handlers = require("nvim-mybatis.actions.handler")
+local logger = require("nvim-mybatis.logger")
 
 local original_buf_request_all
 
@@ -19,7 +19,6 @@ local function inject(results, ctx)
 		local client = vim.lsp.get_client_by_id(cid)
 		if client and client.name == "jdtls" and not response.err then
 			local actions = generator.get_code_actions(ctx.params.range, ctx.params.context, bufnr)
-
 			response.result = response.result or {}
 			for _, action in ipairs(actions) do
 				table.insert(response.result, action)
@@ -34,9 +33,10 @@ function M.setup()
 		return
 	end
 
-	vim.lsp.commands["mybatis.generate_tag"] = function(command)
-		local args = command.arguments[1]
-		handlers.generate_tag(args.interface, args.method, args.bufnr)
+	for cmd_name, handler in pairs(generator.SUPPORT_CMDS) do
+		vim.lsp.commands[cmd_name] = function(command)
+			handler(command.arguments[1])
+		end
 	end
 
 	original_buf_request_all = vim.lsp.buf_request_all
