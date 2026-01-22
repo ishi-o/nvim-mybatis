@@ -28,6 +28,11 @@ A lightweight Neovim plugin powered by Tree-sitter for enhanced navigation betwe
 
 - **[blink.cmp](https://github.com/Saghen/blink.cmp) Integration**: Auto-completion for `namespace`, `resultType`, `parameterType`, `type`, `javaType`, or `ofType` attributes with package/class suggestions
 
+### **Code Action**
+
+- `nvim-mybatis` injects `Code Action` into the language server named `jdtls`. Qualified entries will be provided when `vim.lsp.buf.code_action` is invoked, which requires a connected `jdtls` server.
+- `Generate MyBatis Tag`: When the cursor points to a method in a Mapper interface, this action intelligently determines the `CRUD` type and generates the corresponding `XML tag` snippet in the associated `XML` file.
+
 ## 📦 Installation
 
 <details>
