@@ -6,14 +6,18 @@ local handlers = require("nvim-mybatis.actions.handler")
 
 local original_buf_request_all
 
+--- inject code actions to results
+--- @param results table<integer, { err: (lsp.ResponseError)?, result: any, context: lsp.HandlerContext }>
+--- @param ctx lsp.HandlerContext
 local function inject(results, ctx)
 	local bufnr = ctx.bufnr
 	if not utils.is_mybatis_java(bufnr) then
 		return
 	end
 
-	for _, response in pairs(results) do
-		if not response.err then
+	for cid, response in pairs(results) do
+		local client = vim.lsp.get_client_by_id(cid)
+		if client and client.name == "jdtls" and not response.err then
 			local actions = generator.get_code_actions(ctx.params.range, ctx.params.context, bufnr)
 
 			response.result = response.result or {}
@@ -24,6 +28,7 @@ local function inject(results, ctx)
 	end
 end
 
+--- register handlers, inject vim.lsp.buf_request_all
 function M.setup()
 	if original_buf_request_all then
 		return
@@ -47,6 +52,7 @@ function M.setup()
 	end
 end
 
+--- restore vim.lsp.buf_request_all
 function M.restore()
 	if original_buf_request_all then
 		vim.lsp.buf_request_all = original_buf_request_all
