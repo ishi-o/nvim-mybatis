@@ -129,7 +129,7 @@ end
 
 --- search mappers.xml by namespace
 --- @param namespace string
---- @return string[]? files
+--- @return string? file
 function M.search_mapper(namespace)
 	local project_root = M.get_module_root()
 	local xml_files = {}
@@ -156,7 +156,7 @@ function M.search_mapper(namespace)
 		end
 		handle:close()
 	end
-	return candidate_files
+	return candidate_files[1]
 end
 
 return M

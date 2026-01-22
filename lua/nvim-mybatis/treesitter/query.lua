@@ -134,6 +134,16 @@ function M.resultMap(resultMap)
 	}
 end
 
+--- @return mybatis.treesitter.Query
+function M.mapper_etag()
+	return {
+		lang = "xml",
+		query = [[
+            (ETag (Name) @tag_name (#eq? @tag_name "mapper"))
+        ]],
+	}
+end
+
 --- @param query mybatis.treesitter.Query
 --- @return vim.treesitter.Query
 function M.parse(query)
