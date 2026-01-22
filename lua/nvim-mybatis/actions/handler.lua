@@ -32,10 +32,10 @@ function M.generate_tag(args)
 		vim.api.nvim_set_current_buf(target_bufnr)
 		vim.api.nvim_win_set_cursor(0, { insert_line + 1, 0 })
 
-		vim.snippet.expand(snippet.select(method, resultType))
+		vim.snippet.expand(snippet.crud(method, resultType))
 
 		local filename = vim.fn.fnamemodify(xml_file, ":t")
-		logger.log(string.format("Generated select statement for %s.%s in %s", interface, method, filename))
+		logger.log(string.format("Generated tag for %s.%s", interface, method, filename))
 		break
 	end
 end
