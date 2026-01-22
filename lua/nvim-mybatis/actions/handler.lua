@@ -7,7 +7,7 @@ local snippet = require("nvim-mybatis.actions.snippet")
 
 --- Core generation function: generate MyBatis tag
 --- @param args mybatis.action.CrudTagArgs
-function M.generate_tag(args)
+function M.generate_crud(args)
 	local interface, method, resultType, bufnr
 	interface = args.interface
 	method = args.method
@@ -39,5 +39,11 @@ function M.generate_tag(args)
 		break
 	end
 end
+
+--- TODO: add generate_tag_picker
+function M.generate_crud_picker(args) end
+
+--- TODO: add generate_resultMap
+function M.generate_resultMap() end
 
 return M

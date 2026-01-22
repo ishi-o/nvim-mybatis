@@ -7,7 +7,7 @@ local handler = require("nvim-mybatis.actions.handler")
 --- All support commands
 --- @type table<string, function>
 M.SUPPORT_CMDS = {
-	["mybatis.generate_tag"] = handler.generate_tag,
+	["mybatis.generate_crud"] = handler.generate_crud,
 }
 
 --- CodeAction: Generate MyBatis Tag
@@ -17,7 +17,7 @@ M.SUPPORT_CMDS = {
 --- @return lsp.CodeAction?
 function M.generate_tag(range, context, bufnr)
 	local CA_TITLE = "Generate MyBatis Tag"
-	local CMD = "mybatis.generate_tag"
+	local CMD = "mybatis.generate_crud"
 	local node = ts.get_node()
 	if not node then
 		return nil

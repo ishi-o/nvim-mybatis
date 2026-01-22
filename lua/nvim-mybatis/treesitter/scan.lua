@@ -4,6 +4,7 @@ local M = {}
 
 local query = require("nvim-mybatis.treesitter.query")
 
+--- @param bufnr integer
 --- @return string? pkg_name
 function M.package(bufnr)
 	local qry = query.package()
@@ -12,5 +13,9 @@ function M.package(bufnr)
 	end
 	return nil
 end
+
+--- @param bufnr integer
+--- @return string? pkg_name
+function M.methods(bufnr) end
 
 return M
