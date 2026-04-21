@@ -41,9 +41,6 @@ A lightweight Neovim plugin powered by Tree-sitter for enhanced navigation betwe
 ```lua
 {
   "ishi-o/nvim-mybatis",
-  dependencies = {
-    "nvim-treesitter/nvim-treesitter",
-  },
   opts = {},
 }
 ```
@@ -81,11 +78,12 @@ require("blink.cmp").setup({
 
 ```lua
 --- @class mybatis.NvimMybatisConfig
---- @field autocmd? boolean Enable nvim-mybatis
+--- @field autocmd? boolean  Enable auto-loading of nvim-mybatis. When enabled, hooks into LSP jump behavior (vim.lsp.buf.definition) on file open
 --- @field xml_search_pattern? string[] Patterns to search for XML files
---- @field mapper_name_pattern? string[] Patterns to identify Mapper files for plugin loading
---- @field classpath? string[] Relative paths from classpath to project root
---- @field root_file? string[] Root build files
+--- @field xml_search_tool? "rg"|"ag"|"grep"|"default" Tool to search XML files, "default": auto fallback to built-in grep
+--- @field mapper_name_pattern? string[] Lua string.match patterns to identify Mapper XML files. Plugin navigation is only enabled when an opened XML filename matches these patterns
+--- @field classpath? string[] Relative paths from classpath to project/module root
+--- @field root_file? string[] Root build files to locate project/module root (searches upward from current file)
 --- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" Refresh strategy
 --- @field polling_interval? integer Polling interval (ms)
 --- @field debug? boolean Enable debug mode
@@ -96,6 +94,7 @@ local DEFAULT_CONFIG = {
 	xml_search_pattern = {
 		"**/*Mapper*.xml",
 	},
+	xml_search_tool = "default",
 	mapper_name_pattern = {
 		"[Mm]apper",
 	},
@@ -115,10 +114,7 @@ local DEFAULT_CONFIG = {
 
 ## 📝 Notes
 
-- **treesitter Dependency**: Requires Java and XML parsers (`:TSInstall java xml`)
-- **ripgrep Dependency**: The plugin relies on ripgrep (rg) for fast file searching and indexing.
-- **File Pattern Matching**: `mapper_name_pattern` controls which files activate the plugin's navigation features
-- **Project Detection**: Searches upward for `root_file` patterns to locate project boundaries
+- **tree-sitter**: Requires Java and XML parsers
 - **Determines how the plugin updates its internal class index**: `os_watch` (filesystem events via libuv, may fail), `manual_watch` (monitors specific directories), `polling` (periodic scans), or `none` (no auto-refresh).
 
 ## 🤝 Contributing

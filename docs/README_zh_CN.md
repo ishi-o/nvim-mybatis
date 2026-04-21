@@ -41,9 +41,6 @@
 ```lua
 {
   "ishi-o/nvim-mybatis",
-  dependencies = {
-    "nvim-treesitter/nvim-treesitter",
-  },
   opts = {},
 }
 ```
@@ -81,11 +78,12 @@ require("blink.cmp").setup({
 
 ```lua
 --- @class mybatis.NvimMybatisConfig
---- @field autocmd? boolean 启用 nvim-mybatis
---- @field xml_search_pattern? string[] 用于搜索 XML 文件的模式
---- @field mapper_name_pattern? string[] 用于识别应加载插件的 Mapper 文件的模式
---- @field classpath? string[] 从 classpath 到项目根目录的相对路径
---- @field root_file? string[] 项目根目录构建文件标识
+--- @field autocmd? boolean 启用 nvim-mybatis 的自动加载。启用后，在打开文件时会挂钩 LSP 跳转行为（vim.lsp.buf.definition）
+--- @field xml_search_pattern? string[] 搜索 XML 文件的模式
+--- @field xml_search_tool? "rg"|"ag"|"grep"|"default" 搜索 XML 文件的工具，"default" 表示自动回退到内置 grep
+--- @field mapper_name_pattern? string[] 用于识别 Mapper XML 文件的 Lua string.match 模式。仅当打开的 XML 文件名匹配这些模式时，才启用插件的导航功能
+--- @field classpath? string[] 从 classpath 到项目/模块根目录的相对路径
+--- @field root_file? string[] 根构建文件，用于定位项目/模块根目录（从当前文件向上搜索）
 --- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" 刷新策略
 --- @field polling_interval? integer 轮询间隔（毫秒）
 --- @field debug? boolean 启用调试模式
@@ -96,6 +94,7 @@ local DEFAULT_CONFIG = {
 	xml_search_pattern = {
 		"**/*Mapper*.xml",
 	},
+	xml_search_tool = "default",
 	mapper_name_pattern = {
 		"[Mm]apper",
 	},
@@ -115,10 +114,7 @@ local DEFAULT_CONFIG = {
 
 ## 📝 注意事项
 
-- **Tree-sitter 依赖**: 需要正确安装并启用 Java 和 XML 的 Tree-sitter 语法解析器（请执行 `:TSInstall java xml`）。
-- **ripgrep 依赖**: 本插件依赖 ripgrep (rg) 来实现快速的文件搜索和索引。
-- **文件模式匹配**: `mapper_name_pattern` 参数控制着哪些文件会激活本插件的导航功能。
-- **项目根目录检测**: 插件会从当前文件所在目录向上搜索，根据 `root_file` 参数中定义的文件名来定位项目的根目录。
+- **tree-sitter**: 需要安装并启用`Java`与`XML`的解析器
 - **刷新策略说明**：决定插件如何更新其内部类索引：`os_watch`（通过 libuv 监听文件系统事件，可能失效）、`manual_watch`（监控特定目录）、`polling`（定期扫描）或 `none`（不自动刷新）。
 
 ## 🤝 参与贡献
