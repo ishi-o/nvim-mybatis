@@ -13,6 +13,7 @@
 --- @class mybatis.NvimMybatisConfig
 --- @field autocmd? boolean Enable nvim-mybatis
 --- @field xml_search_pattern? string[] Patterns to search for XML files
+--- @field xml_search_tool? "rg"|"ag"|"grep"|"default" Tool to search XML files
 --- @field mapper_name_pattern? string[] Patterns to identify Mapper files for plugin loading
 --- @field classpath? string[] Relative paths from classpath to project root
 --- @field root_file? string[] Root build files

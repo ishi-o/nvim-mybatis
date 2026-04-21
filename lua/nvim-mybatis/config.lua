@@ -8,6 +8,7 @@ local DEFAULT_CONFIG = {
 	xml_search_pattern = {
 		"**/*Mapper*.xml",
 	},
+	xml_search_tool = "default",
 	mapper_name_pattern = {
 		"[Mm]apper",
 	},
