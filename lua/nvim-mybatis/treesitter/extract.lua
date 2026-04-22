@@ -3,9 +3,9 @@ local M = {}
 
 local ts = vim.treesitter
 local logger = require("nvim-mybatis.logger")
-local conf = require("nvim-mybatis.config")
-local TYPE_ATTRS = conf.TYPE_ATTRS
-local CRUD_TAGS = conf.CRUD_TAGS
+local config = require("nvim-mybatis.config"):get()
+local TYPE_ATTRS = config.type_attributes
+local CRUD_TAGS = config.crud_tags
 
 --- extract class name
 --- @param node TSNode
@@ -18,7 +18,7 @@ function M.classname(node, bufnr)
 			local name_node = current:named_child(0)
 			if name_node then
 				local name_text = ts.get_node_text(name_node, bufnr)
-				if TYPE_ATTRS[name_text] then
+				if vim.tbl_contains(TYPE_ATTRS, name_text) then
 					local value_node = current:named_child(1)
 					if value_node then
 						local text = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")
@@ -65,7 +65,7 @@ function M.crud_id(node, bufnr)
 		return nil
 	end
 	local tag = vim.treesitter.get_node_text(tag_name, bufnr)
-	if CRUD_TAGS[tag] then
+	if vim.tbl_contains(CRUD_TAGS, tag) then
 		return id_value
 	end
 	return nil
@@ -281,6 +281,7 @@ function M.interface_method(node, bufnr)
 	return interface, method
 end
 
+--- TODO: /Users/kingboat/Code/nvim-mybatis/lua/nvim-mybatis/actions/handler.lua generate_resultMap()
 --- @param node TSNode
 --- @param bufnr integer
 --- @return string? resultType

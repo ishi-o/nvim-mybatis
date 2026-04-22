@@ -37,15 +37,16 @@ function M.navigate_from_xml(bufnr)
 		end
 	end
 	-- if the cursor on `extends` attribute
-	local resultMap = treesitter.extract.resultMap(node, bufnr)
-	if resultMap then
-		if resultMap:find("%.") == nil then
-			return treesitter.locate(treesitter.query.resultMap(resultMap))
-		else
-			local namespace, resMap = resultMap:match("^(.*)%.([^%.]+)$")
-			return treesitter.navigate_mapper(namespace, treesitter.query.resultMap(resMap))
-		end
-	end
+	-- FIX: fix resultMap()
+	-- local resultMap = treesitter.extract.resultMap(node, bufnr)
+	-- if resultMap then
+	-- 	if resultMap:find("%.") == nil then
+	-- 		return treesitter.locate(treesitter.query.resultMap(resultMap))
+	-- 	else
+	-- 		local namespace, resMap = resultMap:match("^(.*)%.([^%.]+)$")
+	-- 		return treesitter.navigate_mapper(namespace, treesitter.query.resultMap(resMap))
+	-- 	end
+	-- end
 	-- if the cursor on `property` attribute
 	local clsname, property = treesitter.extract.property(node, bufnr)
 	if clsname and property then

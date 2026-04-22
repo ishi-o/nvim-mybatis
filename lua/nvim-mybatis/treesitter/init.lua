@@ -2,6 +2,7 @@ local M = {}
 
 local utils = require("nvim-mybatis.utils")
 local logger = require("nvim-mybatis.logger")
+local config = require("nvim-mybatis.config"):get()
 
 M.extract = require("nvim-mybatis.treesitter.extract")
 M.query = require("nvim-mybatis.treesitter.query")
@@ -39,7 +40,7 @@ function M.navigate(filepath, query, msg)
 			end, 50)
 			return true
 		end
-	end)
+	end, config.classpaths.java)
 end
 
 --- search `namespace`, `query` to locate

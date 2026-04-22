@@ -116,10 +116,11 @@ function M.scan_java_classes(dir_path, current_pkg, exclude_dirs)
 end
 
 --- @param func fun(classpath: string): boolean?
+--- @param classpaths string[]
 --- @return boolean
-function M.foreach_classpath(func)
+function M.foreach_classpath(func, classpaths)
 	local project_root = M.get_module_root()
-	for _, classpath in ipairs(config.classpath) do
+	for _, classpath in ipairs(classpaths) do
 		if func(project_root .. "/" .. classpath .. "/") then
 			return true
 		end
@@ -127,7 +128,8 @@ function M.foreach_classpath(func)
 	return false
 end
 
-local function search_mapper_fallback_rg(namespace_pattern, project_root)
+--- @type mybatis.utils.SearchToolHandler
+local function search_mapper_fallback_rg(namespace_pattern, mapper_dir)
 	local glob_args = {}
 	for _, glob_pattern in ipairs(config.xml_search_pattern) do
 		table.insert(glob_args, string.format('--glob="%s"', glob_pattern))
@@ -139,7 +141,7 @@ local function search_mapper_fallback_rg(namespace_pattern, project_root)
 	local glob_str = table.concat(glob_args, " ")
 
 	local cmd =
-		string.format("rg -l --color=never --fixed-strings %s '%s' '%s'", glob_str, namespace_pattern, project_root)
+		string.format("rg -l --color=never --fixed-strings %s '%s' '%s'", glob_str, namespace_pattern, mapper_dir)
 	local result = vim.fn.system(cmd)
 	if vim.v.shell_error == 0 then
 		return result:match("[^\r\n]+")
@@ -147,7 +149,8 @@ local function search_mapper_fallback_rg(namespace_pattern, project_root)
 	return nil
 end
 
-local function search_mapper_fallback_ag(namespace_pattern, project_root)
+--- @type mybatis.utils.SearchToolHandler
+local function search_mapper_fallback_ag(namespace_pattern, mapper_dir)
 	local glob_args = {}
 	for _, glob_pattern in ipairs(config.xml_search_pattern) do
 		table.insert(glob_args, string.format("-G '%s'", glob_pattern))
@@ -157,7 +160,7 @@ local function search_mapper_fallback_ag(namespace_pattern, project_root)
 	end
 	local glob_str = table.concat(glob_args, " ")
 
-	local cmd = string.format("ag -l %s '%s' '%s'", glob_str, namespace_pattern, project_root)
+	local cmd = string.format("ag -l %s '%s' '%s'", glob_str, namespace_pattern, mapper_dir)
 	local result = vim.fn.system(cmd)
 	if vim.v.shell_error == 0 then
 		return result:match("[^\r\n]+")
@@ -165,9 +168,10 @@ local function search_mapper_fallback_ag(namespace_pattern, project_root)
 	return nil
 end
 
-local function search_mapper_fallback_grep(namespace_pattern, project_root)
+--- @type mybatis.utils.SearchToolHandler
+local function search_mapper_fallback_grep(namespace_pattern, mapper_dir)
 	vim.fn.grep({
-		args = { "-r", "-l", "--include=*.xml", vim.pesc(namespace_pattern), project_root },
+		args = { "-r", "-l", "--include=*.xml", vim.pesc(namespace_pattern), mapper_dir },
 	})
 
 	local qf = vim.fn.getqflist()
@@ -183,27 +187,34 @@ end
 --- @return string? file
 function M.search_mapper(namespace)
 	local namespace_pattern = string.format('namespace="%s"', namespace)
-	local project_root = M.get_module_root()
+	local result = nil
+	--- @type table<mybatis.utils.SearchTool, mybatis.utils.SearchToolHandler>
 	local tools = {
 		rg = search_mapper_fallback_rg,
 		ag = search_mapper_fallback_ag,
 		grep = search_mapper_fallback_grep,
 	}
+	--- @type mybatis.utils.SearchTool[]
 	local tool_order = { "rg", "ag", "grep" }
-	if config.xml_search_tool ~= "default" then
-		return tools[config.xml_search_tool](namespace_pattern, project_root)
-	end
-	local result = nil
-	for _, name in ipairs(tool_order) do
-		if name == "grep" or vim.fn.executable(name) ~= 0 then
-			result = tools[name](namespace_pattern, project_root)
-			if result then
-				return result
+	M.foreach_classpath(function(classpath)
+		if config.xml_search_tool ~= "default" then
+			return tools[config.xml_search_tool](namespace_pattern, classpath)
+		end
+		for _, name in ipairs(tool_order) do
+			if name == "grep" or vim.fn.executable(name) ~= 0 then
+				result = tools[name](namespace_pattern, classpath)
+				if result then
+					return true
+				end
 			end
 		end
+		return false
+	end, config.classpaths.xml)
+	if result == nil then
+		logger.warn("No XML file found for mapper: " .. namespace)
+		return nil
 	end
-	logger.warn("No XML file found for mapper: " .. namespace)
-	return nil
+	return result
 end
 
 return M

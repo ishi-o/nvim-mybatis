@@ -80,12 +80,13 @@ require("blink.cmp").setup({
 --- @class mybatis.NvimMybatisConfig
 --- @field autocmd? boolean 启用 nvim-mybatis 的自动加载。启用后，在打开文件时会挂钩 LSP 跳转行为（vim.lsp.buf.definition）
 --- @field xml_search_pattern? string[] 搜索 XML 文件的模式
---- @field xml_search_tool? "rg"|"ag"|"grep"|"default" 搜索 XML 文件的工具，"default" 表示自动回退到内置 grep
+--- @field xml_search_tool? mybatis.utils.SearchTool 搜索 XML 文件的工具，"default" 表示按顺序尝试 "rg"、"ag"、"grep"
+--- @field completion_provider? mybatis.completion.Provider XML 补全提供者，"default" 表示按顺序尝试 "index"、"jdtls"
 --- @field mapper_name_pattern? string[] 用于识别 Mapper XML 文件的 Lua string.match 模式。仅当打开的 XML 文件名匹配这些模式时，才启用插件的导航功能
---- @field classpath? string[] 从 classpath 到项目/模块根目录的相对路径
+--- @field classpaths? { java?: string[], xml?: string[] } 从 classpath 到项目/模块根目录的相对路径
 --- @field root_file? string[] 根构建文件，用于定位项目/模块根目录（从当前文件向上搜索）
---- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" 刷新策略
---- @field polling_interval? integer 轮询间隔（毫秒）
+--- @field type_attributes? string[] 表示类型的 XML 属性名
+--- @field crud_tags? string[] 表示 CRUD 映射的 XML 标签名
 --- @field debug? boolean 启用调试模式
 
 --- @type NvimMybatisConfig
@@ -95,19 +96,38 @@ local DEFAULT_CONFIG = {
 		"**/*Mapper*.xml",
 	},
 	xml_search_tool = "default",
+	completion_provider = "default",
 	mapper_name_pattern = {
 		"[Mm]apper",
 	},
-	classpath = {
-		"src/main/java",
+	classpaths = {
+		java = {
+			"src/main/java",
+		},
+		xml = {
+			"src/main/resources",
+		},
 	},
 	root_file = {
 		"pom.xml",
 		"build.gradle",
 		"build.gradle.kts",
 	},
-	refresh_strategy = "manual_watch",
-	polling_interval = 10000,
+	type_attributes = {
+		"namespace",
+		"resultType",
+		"parameterType",
+		"type",
+		"javaType",
+		"ofType",
+		"typeHandler",
+	},
+	crud_tags = {
+		"select",
+		"update",
+		"delete",
+		"insert",
+	},
 	debug = false,
 }
 ```
@@ -115,7 +135,6 @@ local DEFAULT_CONFIG = {
 ## 📝 注意事项
 
 - **tree-sitter**: 需要安装并启用`Java`与`XML`的解析器
-- **刷新策略说明**：决定插件如何更新其内部类索引：`os_watch`（通过 libuv 监听文件系统事件，可能失效）、`manual_watch`（监控特定目录）、`polling`（定期扫描）或 `none`（不自动刷新）。
 
 ## 🤝 参与贡献
 
