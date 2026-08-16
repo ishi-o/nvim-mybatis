@@ -1,9 +1,17 @@
 --- @module 'mybatis.types'
 
---- @alias mybatis.completion.Context
---- | "class"
---- | "method"
---- | "field"
+--- @alias mybatis.completion.ContextKind
+--- | "class" completion of fully-qualified java class names
+--- | "method" completion of mapper interface method names
+--- | "field" completion of entity field names
+--- | "refid" completion of `<sql id>` fragment ids
+
+--- @class mybatis.completion.Context
+--- @field kind mybatis.completion.ContextKind
+--- @field bufnr? integer buffer the completion was requested in
+--- @field value_node? TSNode the AttValue node being completed
+--- @field namespace? string mapper namespace (`method` context)
+--- @field type? string owning entity type (`field` context)
 
 --- @alias mybatis.completion.Provider
 --- | "index"
@@ -12,7 +20,8 @@
 
 --- @class mybatis.completion.Backend
 --- @field name mybatis.completion.Provider
---- @field get_completion_items fun(partial: string, ctx: mybatis.completion.Context): lsp.CompletionItem[]
+--- @field get_completion_items fun(partial: string, ctx: mybatis.completion.Context, callback: fun(items: lsp.CompletionItem[])): nil
+--- @field get_completion_items_sync? fun(partial: string, ctx: mybatis.completion.Context): lsp.CompletionItem[]
 --- @field refresh fun(): nil
 --- @field is_available fun():boolean
 --- @field on_change fun(calback: fun()): nil

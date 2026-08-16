@@ -281,10 +281,4 @@ function M.interface_method(node, bufnr)
 	return interface, method
 end
 
---- TODO: /Users/kingboat/Code/nvim-mybatis/lua/nvim-mybatis/actions/handler.lua generate_resultMap()
---- @param node TSNode
---- @param bufnr integer
---- @return string? resultType
-function M.resultTypeFromJava(node, bufnr) end
-
 return M

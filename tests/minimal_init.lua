@@ -1,19 +1,32 @@
-local root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p")
+local root = vim.fn.fnamemodify(vim.fn.getcwd(), ":p"):gsub("/$", "")
 
 vim.opt.swapfile = false
 vim.opt.shadafile = "NONE"
 vim.opt.shada = ""
 
 vim.opt.runtimepath:prepend(root .. "/lua")
-vim.opt.runtimepath:append(vim.fn.stdpath("config") .. "/share/nvim/runtime")
+-- spec helpers live in tests/lua/spec/helpers.lua (require("spec.helpers"))
+vim.opt.runtimepath:prepend(root .. "/tests")
+-- tree-sitter parsers installed by nvim-treesitter
+vim.opt.runtimepath:append(vim.fn.stdpath("data") .. "/site")
 
-local has_treesitter, _ = pcall(require, "nvim-treesitter")
-if not has_treesitter then
-	package.preload["nvim-treesitter"] = function()
-		return {
-			setup = function() end,
-		}
+--- prepend a test dependency to the runtimepath: tests/deps first, then a
+--- locally installed lazy.nvim clone, so the suite also runs outside CI
+--- @param name string
+--- @return boolean found
+local function prepend_dep(name)
+	local candidates = {
+		root .. "/tests/deps/" .. name,
+		vim.fn.stdpath("data") .. "/lazy/" .. name,
+	}
+	for _, path in ipairs(candidates) do
+		if vim.fn.isdirectory(path) == 1 then
+			vim.opt.runtimepath:prepend(path)
+			return true
+		end
 	end
+	return false
 end
 
-pcall(require, "mybatis")
+assert(prepend_dep("plenary.nvim"), "plenary.nvim not found; clone it into tests/deps/")
+prepend_dep("nvim-treesitter")

@@ -49,7 +49,13 @@ M.values = DEFAULT_CONFIG
 
 --- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
-	M.values = vim.tbl_deep_extend("force", M.values, config or {})
+	-- reset to defaults in place (keeping the table identity) so references
+	-- captured by modules at require time stay live, and repeated setup()
+	-- calls don't compound
+	for key in pairs(M.values) do
+		M.values[key] = nil
+	end
+	vim.tbl_deep_extend("force", M.values, vim.deepcopy(DEFAULT_CONFIG), config or {})
 	return M
 end
 

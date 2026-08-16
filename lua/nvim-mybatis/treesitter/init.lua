@@ -33,11 +33,9 @@ function M.navigate(filepath, query, msg)
 	return utils.foreach_classpath(function(classpath)
 		if vim.fn.filereadable(classpath .. filepath) == 1 then
 			vim.cmd("edit " .. vim.fn.fnameescape(classpath .. filepath))
-			vim.defer_fn(function()
-				if not M.locate(query) then
-					logger.warn(msg or "Invalid navigate")
-				end
-			end, 50)
+			if not M.locate(query) then
+				logger.warn(msg or "Invalid navigate")
+			end
 			return true
 		end
 	end, config.classpaths.java)
@@ -52,11 +50,9 @@ function M.navigate_mapper(namespace, query, msg)
 	local file = utils.search_mapper(namespace)
 	if file then
 		vim.cmd("edit " .. vim.fn.fnameescape(file))
-		vim.defer_fn(function()
-			if not M.locate(query) then
-				logger.warn(msg or "Invalid navigate")
-			end
-		end, 50)
+		if not M.locate(query) then
+			logger.warn(msg or "Invalid navigate")
+		end
 		return true
 	end
 	return false

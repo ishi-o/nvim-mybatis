@@ -70,6 +70,9 @@ function M.get_java_builtin_types()
 	}
 end
 
+--- default directory name patterns excluded when scanning java sources
+M.EXCLUDED_DIRS = { "^%.", "target", "build" }
+
 --- scan dir_path recursively
 --- @param dir_path string
 --- @param current_pkg string
@@ -77,7 +80,7 @@ end
 --- @return string[] classes All fully qualified class name in `dir_path`
 function M.scan_java_classes(dir_path, current_pkg, exclude_dirs)
 	local classes = {}
-	exclude_dirs = exclude_dirs or { "^%.", "target", "build" }
+	exclude_dirs = exclude_dirs or M.EXCLUDED_DIRS
 
 	local function should_exclude(dir_name)
 		for _, pattern in ipairs(exclude_dirs) do
@@ -120,6 +123,10 @@ end
 --- @return boolean
 function M.foreach_classpath(func, classpaths)
 	local project_root = M.get_module_root()
+	if not project_root then
+		logger.warn("Module root not found (missing root file: " .. table.concat(config.root_file, ", ") .. ")")
+		return false
+	end
 	for _, classpath in ipairs(classpaths) do
 		if func(project_root .. "/" .. classpath .. "/") then
 			return true

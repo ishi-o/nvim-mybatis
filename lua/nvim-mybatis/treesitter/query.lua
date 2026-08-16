@@ -40,6 +40,28 @@ function M.field(field)
 	}
 end
 
+--- @return mybatis.treesitter.Query
+function M.methods()
+	return {
+		lang = "java",
+		query = [[
+			(method_declaration name: (identifier) @method_name)
+		]],
+	}
+end
+
+--- @return mybatis.treesitter.Query
+function M.fields()
+	return {
+		lang = "java",
+		query = [[
+			(field_declaration
+			  declarator: (variable_declarator
+			    name: (identifier) @field_name))
+		]],
+	}
+end
+
 --- @param method string
 --- @return mybatis.treesitter.Query query
 function M.method(method)
@@ -131,6 +153,22 @@ function M.resultMap(resultMap)
 			]],
 			resultMap
 		),
+	}
+end
+
+--- @return mybatis.treesitter.Query all `<sql id="...">` fragment ids in a buffer
+function M.sqlids()
+	return {
+		lang = "xml",
+		query = [[
+			(STag
+			  (Name) @tag_name
+			  (Attribute
+			    (Name) @attr_name
+			    (AttValue) @attr_value)
+			  (#eq? @tag_name "sql")
+			  (#eq? @attr_name "id"))
+		]],
 	}
 end
 

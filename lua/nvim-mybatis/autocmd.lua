@@ -24,6 +24,10 @@ function M.setup()
 				buffer = bufnr,
 				desc = "Mybatis: navigate from XML",
 			})
+			-- native completion (<C-x><C-o>); only when nothing else claimed omnifunc
+			if vim.bo[bufnr].omnifunc == "" then
+				vim.bo[bufnr].omnifunc = "v:lua.require'nvim-mybatis.completion.omnifunc'.omnifunc"
+			end
 			logger.info("XML file loaded successfully")
 		end,
 	})
@@ -44,6 +48,14 @@ function M.setup()
 				desc = "Mybatis: navigate from java",
 			})
 			logger.info("Java file loaded successfully")
+		end,
+	})
+	-- invalidate the class index when java sources change (new/renamed classes)
+	autocmd("BufWritePost", {
+		pattern = "*.java",
+		group = group,
+		callback = function()
+			require("nvim-mybatis.completion.backend.index").refresh()
 		end,
 	})
 end
