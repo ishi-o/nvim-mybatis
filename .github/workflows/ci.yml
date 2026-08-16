@@ -21,4 +21,5 @@ jobs:
           unzip -j /tmp/stylua.zip -d "$HOME/.local/bin"
 
       - name: Check formatting
-        run: "$HOME/.local/bin/stylua" --check lua/ tests/spec/
+        run: |
+          "$HOME/.local/bin/stylua" --check lua/ tests/spec/
