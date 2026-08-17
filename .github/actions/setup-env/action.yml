@@ -143,13 +143,21 @@ runs:
         git clone --depth 1 https://github.com/nvim-lua/plenary.nvim tests/deps/plenary.nvim
         git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter tests/deps/nvim-treesitter
 
+    - name: Resolve nvim-treesitter revision
+      id: nvim_treesitter
+      if: inputs.parsers == 'true'
+      shell: bash
+      run: |
+        revision="$(git -C tests/deps/nvim-treesitter rev-parse HEAD)"
+        echo "revision=$revision" >> "$GITHUB_OUTPUT"
+
     - name: Cache Tree-sitter parsers
       id: parsers_cache
       if: inputs.parsers == 'true'
       uses: actions/cache/restore@v5
       with:
         path: ~/.local/share/nvim/site/parser
-        key: nvim-treesitter-parsers-${{ runner.os }}-${{ steps.neovim_version.outputs.version }}-${{ inputs.tree_sitter_version }}-${{ hashFiles('tests/deps/nvim-treesitter/**') }}
+        key: nvim-treesitter-parsers-${{ runner.os }}-${{ steps.neovim_version.outputs.version }}-${{ inputs.tree_sitter_version }}-${{ steps.nvim_treesitter.outputs.revision }}
 
     - name: Install Tree-sitter parsers
       if: inputs.parsers == 'true' && steps.parsers_cache.outputs.cache-hit != 'true'
