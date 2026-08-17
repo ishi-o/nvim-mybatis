@@ -20,7 +20,7 @@ describe("utils", function()
 	it("scan_java_classes lists fully-qualified class names", function()
 		local classes = utils.scan_java_classes(helpers.fixture("project/src/main/java"), "")
 		table.sort(classes)
-		assert.equals({
+		assert.same({
 			"com.example.entity.User",
 			"com.example.legacy.User",
 			"com.example.mapper.UserMapper",
@@ -29,10 +29,10 @@ describe("utils", function()
 
 	it("scan_java_classes excludes target and build directories", function()
 		local classes = utils.scan_java_classes(
-			vim.fs.normalize(debug.getinfo(1, "S").source:sub(2):gsub("/[^/]+$", ""))
+			vim.fs.normalize((debug.getinfo(1, "S").source:sub(2):gsub("/[^/]+$", "")))
 				.. "/excluded",
 			""
 		)
-		assert.equals({}, classes)
+		assert.same({}, classes)
 	end)
 end)

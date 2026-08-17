@@ -18,7 +18,7 @@ local KIND_CHAR = {
 --- find where the typed value starts: right after the opening quote of the
 --- attribute value, so accepting an item replaces the whole partial text
 --- @return integer col 0-based column, or -3 to cancel completion silently
-local function findstart()
+local function find_start()
 	if not context.detect() then
 		return -3
 	end
@@ -41,7 +41,7 @@ end
 --- @return integer|table
 function M.omnifunc(findstart, base)
 	if findstart == 1 then
-		return findstart()
+		return find_start()
 	end
 
 	local ctx = context.detect()
