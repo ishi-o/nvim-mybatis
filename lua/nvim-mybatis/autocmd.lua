@@ -6,6 +6,13 @@ local utils = require("nvim-mybatis.utils")
 local navigator = require("nvim-mybatis.navigator")
 local logger = require("nvim-mybatis.logger")
 
+local function jump(bufnr)
+	if not navigator.jump(bufnr) then
+		vim.lsp.buf.definition()
+	end
+end
+
+--- Register MyBatis filetype autocmds and buffer-local `gd` mappings.
 function M.setup()
 	local group = vim.api.nvim_create_augroup("MyBatis", {})
 	autocmd("FileType", {
@@ -17,9 +24,7 @@ function M.setup()
 				return
 			end
 			map("n", "gd", function()
-				if not navigator.xml.navigate_from_xml(bufnr) then
-					vim.lsp.buf.definition()
-				end
+				jump(bufnr)
 			end, {
 				buffer = bufnr,
 				desc = "Mybatis: navigate from XML",
@@ -40,9 +45,7 @@ function M.setup()
 				return
 			end
 			map("n", "gd", function()
-				if not navigator.java.navigate_from_java(bufnr) then
-					vim.lsp.buf.definition()
-				end
+				jump(bufnr)
 			end, {
 				buffer = bufnr,
 				desc = "Mybatis: navigate from java",

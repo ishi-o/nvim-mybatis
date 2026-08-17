@@ -22,14 +22,16 @@ end
 --- @param bufnr? integer
 --- @return boolean
 function M.is_mybatis_java(bufnr)
-	return vim.bo.filetype == "java" and M.is_mybatis_file(bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	return vim.bo[bufnr].filetype == "java" and M.is_mybatis_file(bufnr)
 end
 
 --- check if the file is xml and mybatis file
 --- @param bufnr? integer
 --- @return boolean
 function M.is_mybatis_xml(bufnr)
-	return vim.bo.filetype == "xml" and M.is_mybatis_file(bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	return vim.bo[bufnr].filetype == "xml" and M.is_mybatis_file(bufnr)
 end
 
 --- get project / module root dir
