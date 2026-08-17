@@ -61,7 +61,7 @@ jobs:
           nvim --headless -u tests/minimal_init.lua \
             -c "PlenaryBustedDirectory tests/spec/ {minimal_init = 'tests/minimal_init.lua'}"
 
-  create_maintenance_pr:
+  create_pr:
     name: Create maintenance PR
     needs: [style_lint, test]
     if: >-
@@ -80,19 +80,10 @@ jobs:
       changed: ${{ steps.changes.outputs.changed }}
       url: ${{ steps.pull_request.outputs.pull-request-url }}
     steps:
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ vars.RELEASE_APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: nvim-mybatis
-
       - uses: actions/checkout@v5
         with:
           ref: main
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ github.token }}
           fetch-depth: 0
 
       - name: Set up StyLua
@@ -130,12 +121,12 @@ jobs:
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create or update maintenance PR
+      - name: Create PR
         id: pull_request
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ steps.app-token.outputs.token }}
-          branch-token: ${{ steps.app-token.outputs.token }}
+          token: ${{ github.token }}
+          branch-token: ${{ github.token }}
           branch: automation/generated-files
           base: main
           delete-branch: true
@@ -156,7 +147,7 @@ jobs:
       - name: Enable automatic merge
         if: steps.pull_request.outputs.pull-request-url != ''
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh pr merge \
             "${{ steps.pull_request.outputs.pull-request-url }}" \
@@ -166,7 +157,7 @@ jobs:
 
   auto_tag:
     name: Auto-tag
-    needs: [style_lint, test, create_maintenance_pr]
+    needs: [style_lint, test, create_pr]
     if: >-
       always() &&
       (
@@ -175,8 +166,8 @@ jobs:
       ) &&
       needs.style_lint.result == 'success' &&
       needs.test.result == 'success' &&
-      needs.create_maintenance_pr.result == 'success' &&
-      needs.create_maintenance_pr.outputs.changed == 'false'
+      needs.create_pr.result == 'success' &&
+      needs.create_pr.outputs.changed == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -184,25 +175,17 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       created: ${{ steps.tag.outputs.created }}
     steps:
-      - name: Create GitHub App token
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ vars.RELEASE_APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-          owner: ${{ github.repository_owner }}
-          repositories: nvim-mybatis
-
       - uses: actions/checkout@v5
         with:
           ref: main
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ github.token }}
           fetch-depth: 0
           fetch-tags: true
 
       - name: Read version
         id: version
         run: |
+          git fetch origin main --tags
           VERSION=$(sed -n 's/^local VERSION = "\(.*\)"$/\1/p' lua/nvim-mybatis/version.lua)
           if [ -z "$VERSION" ]; then
             echo "Failed to read version from lua/nvim-mybatis/version.lua" >&2
@@ -210,13 +193,26 @@ jobs:
           fi
           echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
 
+          latest_tag=$(git tag --list 'v*' --sort=-version:refname | head -n 1)
+          if [ -z "$latest_tag" ] || ! git diff --quiet "$latest_tag..HEAD" -- lua/nvim-mybatis/version.lua; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create tag
         id: tag
         env:
           TAG: ${{ steps.version.outputs.tag }}
+          VERSION_CHANGED: ${{ steps.version.outputs.changed }}
           BRANCH: main
         run: |
           git fetch origin "$BRANCH" --tags
+          if [ "$VERSION_CHANGED" != "true" ]; then
+            echo "version.lua has not changed since the latest release."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
             echo "Tag $TAG already exists, nothing to do."
             echo "created=false" >> "$GITHUB_OUTPUT"
@@ -231,7 +227,7 @@ jobs:
 
   release:
     name: Release
-    needs: [style_lint, test, create_maintenance_pr, auto_tag]
+    needs: [style_lint, test, create_pr, auto_tag]
     if: >-
       always() &&
       (
@@ -246,8 +242,8 @@ jobs:
           ) &&
           needs.style_lint.result == 'success' &&
           needs.test.result == 'success' &&
-          needs.create_maintenance_pr.result == 'success' &&
-          needs.create_maintenance_pr.outputs.changed == 'false' &&
+          needs.create_pr.result == 'success' &&
+          needs.create_pr.outputs.changed == 'false' &&
           needs.auto_tag.result == 'success' &&
           needs.auto_tag.outputs.created == 'true'
         )
@@ -262,4 +258,4 @@ jobs:
           generate_release_notes: true
           tag_name: ${{ needs.auto_tag.outputs.tag || github.ref_name }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
