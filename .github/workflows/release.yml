@@ -77,7 +77,7 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      changed: ${{ steps.pull_request.outputs.pull-request-operation != 'none' }}
+      changed: ${{ steps.changes.outputs.changed }}
       url: ${{ steps.pull_request.outputs.pull-request-url }}
     steps:
       - name: Create GitHub App token
@@ -121,6 +121,15 @@ jobs:
       - name: Generate help tags
         run: nvim --headless -c 'helptags doc/' -c 'quit' 2>/dev/null
 
+      - name: Check generated changes
+        id: changes
+        run: |
+          if git status --porcelain --untracked-files=all -- lua/ tests/spec/ doc | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create or update maintenance PR
         id: pull_request
         uses: peter-evans/create-pull-request@v8
@@ -144,6 +153,17 @@ jobs:
           committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
           author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
 
+      - name: Enable automatic merge
+        if: steps.pull_request.outputs.pull-request-url != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh pr merge \
+            "${{ steps.pull_request.outputs.pull-request-url }}" \
+            --auto \
+            --squash \
+            --delete-branch
+
   auto_tag:
     name: Auto-tag
     needs: [style_lint, test, create_maintenance_pr]
@@ -156,7 +176,7 @@ jobs:
       needs.style_lint.result == 'success' &&
       needs.test.result == 'success' &&
       needs.create_maintenance_pr.result == 'success' &&
-      needs.create_maintenance_pr.outputs.changed != 'true'
+      needs.create_maintenance_pr.outputs.changed == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -227,7 +247,7 @@ jobs:
           needs.style_lint.result == 'success' &&
           needs.test.result == 'success' &&
           needs.create_maintenance_pr.result == 'success' &&
-          needs.create_maintenance_pr.outputs.changed != 'true' &&
+          needs.create_maintenance_pr.outputs.changed == 'false' &&
           needs.auto_tag.result == 'success' &&
           needs.auto_tag.outputs.created == 'true'
         )
