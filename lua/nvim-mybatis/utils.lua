@@ -124,7 +124,11 @@ end
 function M.foreach_classpath(func, classpaths)
 	local project_root = M.get_module_root()
 	if not project_root then
-		logger.warn("Module root not found (missing root file: " .. table.concat(config.root_file, ", ") .. ")")
+		logger.warn(
+			"Module root not found (missing root file: "
+				.. table.concat(config.root_file, ", ")
+				.. ")"
+		)
 		return false
 	end
 	for _, classpath in ipairs(classpaths) do
@@ -147,8 +151,12 @@ local function search_mapper_fallback_rg(namespace_pattern, mapper_dir)
 
 	local glob_str = table.concat(glob_args, " ")
 
-	local cmd =
-		string.format("rg -l --color=never --fixed-strings %s '%s' '%s'", glob_str, namespace_pattern, mapper_dir)
+	local cmd = string.format(
+		"rg -l --color=never --fixed-strings %s '%s' '%s'",
+		glob_str,
+		namespace_pattern,
+		mapper_dir
+	)
 	local result = vim.fn.system(cmd)
 	if vim.v.shell_error == 0 then
 		return result:match("[^\r\n]+")

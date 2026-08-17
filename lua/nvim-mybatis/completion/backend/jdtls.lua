@@ -28,7 +28,9 @@ local function build_items(result)
 			local simple_name = symbol.name
 			if not seen[simple_name] then
 				seen[simple_name] = true
-				local full_name = symbol.containerName and symbol.containerName .. "." .. simple_name or simple_name
+				local full_name = symbol.containerName
+						and symbol.containerName .. "." .. simple_name
+					or simple_name
 				table.insert(items, {
 					label = simple_name,
 					--- @type lsp.CompletionItemKind
@@ -64,7 +66,8 @@ function M.get_completion_items_sync(partial, ctx)
 	if not c then
 		return {}
 	end
-	local response = c:request_sync("workspace/symbol", { query = partial }, SYNC_TIMEOUT_MS, ctx.bufnr)
+	local response =
+		c:request_sync("workspace/symbol", { query = partial }, SYNC_TIMEOUT_MS, ctx.bufnr)
 	if not response or response.err then
 		return {}
 	end

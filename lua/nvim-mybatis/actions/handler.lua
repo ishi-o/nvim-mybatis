@@ -27,7 +27,9 @@ function M.generate_crud(args)
 	end
 
 	local query = treesitter.query.mapper_etag()
-	for _, node in treesitter.query.iter_query(target_bufnr, query.lang, treesitter.query.parse(query)) do
+	for _, node in
+		treesitter.query.iter_query(target_bufnr, query.lang, treesitter.query.parse(query))
+	do
 		local insert_line = node:range()
 		vim.api.nvim_set_current_buf(target_bufnr)
 		vim.api.nvim_win_set_cursor(0, { insert_line + 1, 0 })

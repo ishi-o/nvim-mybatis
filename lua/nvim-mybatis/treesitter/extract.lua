@@ -93,7 +93,10 @@ function M.belong_namespace(node, bufnr)
 					end
 					for _, attr in ipairs(attrs or {}) do
 						local attr_name_node = attr:named_child(0)
-						if attr_name_node and ts.get_node_text(attr_name_node, bufnr) == "namespace" then
+						if
+							attr_name_node
+							and ts.get_node_text(attr_name_node, bufnr) == "namespace"
+						then
 							local value_node = attr:named_child(1)
 							if value_node then
 								local text = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")
@@ -235,9 +238,9 @@ function M.property(node, bufnr)
 										if attr_name == "type" then
 											local attr_value_node = attr:named_child(1)
 											if attr_value_node then
-												local type_value = ts
-													.get_node_text(attr_value_node, bufnr)
-													:gsub("['\"]", "")
+												local type_value =
+													ts.get_node_text(attr_value_node, bufnr)
+														:gsub("['\"]", "")
 												return type_value, property_value
 											end
 										end

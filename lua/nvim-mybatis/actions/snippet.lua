@@ -69,9 +69,17 @@ function M.crud(method, resultType)
 		or lowerMethod:find("^query")
 	then
 		return M.select(method, resultType)
-	elseif lowerMethod:find("^update") or lowerMethod:find("^modify") or lowerMethod:find("^edit") then
+	elseif
+		lowerMethod:find("^update")
+		or lowerMethod:find("^modify")
+		or lowerMethod:find("^edit")
+	then
 		return M.update(method)
-	elseif lowerMethod:find("^delete") or lowerMethod:find("^remove") or lowerMethod:find("^del") then
+	elseif
+		lowerMethod:find("^delete")
+		or lowerMethod:find("^remove")
+		or lowerMethod:find("^del")
+	then
 		return M.delete(method)
 	elseif
 		lowerMethod:find("^insert")

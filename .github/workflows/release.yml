@@ -6,7 +6,7 @@ on:
     branches:
       - main
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch:
 
 concurrency:
@@ -62,11 +62,11 @@ jobs:
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
-          version: nightly
+          version: stable
 
       - name: Install tree-sitter CLI
         run: |
-          cargo install --locked tree-sitter-cli --version 0.26.1
+          cargo install --locked tree-sitter-cli --version 0.25.10
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           "$HOME/.cargo/bin/tree-sitter" --version
 
@@ -124,7 +124,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           branch: ${{ github.ref_name }}
-          commit_message: "style: apply StyLua formatting"
+          commit_message: 'style: apply StyLua formatting'
           file_pattern: |
             lua/
             tests/spec/
@@ -179,7 +179,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           branch: ${{ github.ref_name }}
-          commit_message: "chore(docs): auto-generate vimdoc"
+          commit_message: 'chore(docs): auto-generate vimdoc'
           file_pattern: |
             doc/*.txt
             doc/tags
