@@ -1,4 +1,5 @@
 --- @module 'mybatis.config'
+--- Configuration values and defaults for nvim-mybatis.
 
 local M = {}
 
@@ -26,30 +27,24 @@ local DEFAULT_CONFIG = {
 		"build.gradle",
 		"build.gradle.kts",
 	},
-	type_attributes = {
-		"namespace",
-		"resultType",
-		"parameterType",
-		"type",
-		"javaType",
-		"ofType",
-		"typeHandler",
-	},
-	crud_tags = {
-		"select",
-		"update",
-		"delete",
-		"insert",
-	},
 	debug = false,
 }
 
 --- @type mybatis.NvimMybatisConfig
 M.values = vim.deepcopy(DEFAULT_CONFIG)
 
+--- Defaults: `autocmd = true`, `xml_search_pattern = { "**/*Mapper*.xml" }`,
+--- `xml_search_tool = "default"`, `completion_provider = "default"`,
+--- `mapper_name_pattern = { "[Mm]apper" }`, Java/XML classpaths of
+--- `src/main/java` and `src/main/resources`, Maven/Gradle root files, and
+--- `debug = false`.
 --- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
-	local values = vim.tbl_deep_extend("force", vim.deepcopy(DEFAULT_CONFIG), config or {})
+	local overrides = vim.deepcopy(config or {})
+	-- These lists are parser constants, not configuration options.
+	overrides.type_attributes = nil
+	overrides.crud_tags = nil
+	local values = vim.tbl_deep_extend("force", vim.deepcopy(DEFAULT_CONFIG), overrides)
 	-- Keep the table identity stable because other modules retain this reference.
 	for key in pairs(M.values) do
 		M.values[key] = nil

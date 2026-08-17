@@ -2,10 +2,10 @@
 local M = {}
 
 local ts = vim.treesitter
+local constants = require("nvim-mybatis.constants")
 local logger = require("nvim-mybatis.logger")
-local config = require("nvim-mybatis.config"):get()
-local TYPE_ATTRS = config.type_attributes
-local CRUD_TAGS = config.crud_tags
+local TYPE_ATTRIBUTES = constants.TYPE_ATTRIBUTES
+local CRUD_TAGS = constants.CRUD_TAGS
 
 --- extract class name
 --- @param node TSNode
@@ -18,7 +18,7 @@ function M.classname(node, bufnr)
 			local name_node = current:named_child(0)
 			if name_node then
 				local name_text = ts.get_node_text(name_node, bufnr)
-				if vim.tbl_contains(TYPE_ATTRS, name_text) then
+				if vim.tbl_contains(TYPE_ATTRIBUTES, name_text) then
 					local value_node = current:named_child(1)
 					if value_node then
 						local text = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")

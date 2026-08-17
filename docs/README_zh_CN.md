@@ -32,6 +32,7 @@
 
 - `nvim-mybatis` 会将`Code Action`注入到名为`jdtls`的语言服务器中。符合条件的条目会在调用`vim.lsp.buf.code_action`时提供，这需要一个已连接的`jdtls`服务器。
 - `Generate MyBatis Tag`：当光标指向 Mapper 接口中的一个方法时，此操作会智能判断`CRUD`类型，并在相关联的`XML`文件中生成对应的`XML tag`代码片段。
+- 同样的操作也可以通过`:MybatisGenerateTag`命令执行。
 
 ## 📦 安装
 
@@ -76,65 +77,21 @@ require("blink.cmp").setup({
 
 ## ⚙️ 配置
 
-```lua
---- @class mybatis.NvimMybatisConfig
---- @field autocmd? boolean 启用 nvim-mybatis 的自动加载。启用后，在打开文件时会挂钩 LSP 跳转行为（vim.lsp.buf.definition）
---- @field xml_search_pattern? string[] 搜索 XML 文件的模式
---- @field xml_search_tool? mybatis.utils.SearchTool 搜索 XML 文件的工具，"default" 表示按顺序尝试 "rg"、"ag"、"grep"
---- @field completion_provider? mybatis.completion.Provider XML 补全提供者，"default" 表示按顺序尝试 "index"、"jdtls"
---- @field mapper_name_pattern? string[] 用于识别 Mapper XML 文件的 Lua string.match 模式。仅当打开的 XML 文件名匹配这些模式时，才启用插件的导航功能
---- @field classpaths? { java?: string[], xml?: string[] } 从 classpath 到项目/模块根目录的相对路径
---- @field root_file? string[] 根构建文件，用于定位项目/模块根目录（从当前文件向上搜索）
---- @field type_attributes? string[] 表示类型的 XML 属性名
---- @field crud_tags? string[] 表示 CRUD 映射的 XML 标签名
---- @field debug? boolean 启用调试模式
+通过插件的 `opts` 表传入配置。可用选项和默认值请参见 `:help nvim-mybatis-api`。
 
---- @type NvimMybatisConfig
-local DEFAULT_CONFIG = {
-	autocmd = true,
-	xml_search_pattern = {
-		"**/*Mapper*.xml",
-	},
-	xml_search_tool = "default",
-	completion_provider = "default",
-	mapper_name_pattern = {
-		"[Mm]apper",
-	},
-	classpaths = {
-		java = {
-			"src/main/java",
-		},
-		xml = {
-			"src/main/resources",
-		},
-	},
-	root_file = {
-		"pom.xml",
-		"build.gradle",
-		"build.gradle.kts",
-	},
-	type_attributes = {
-		"namespace",
-		"resultType",
-		"parameterType",
-		"type",
-		"javaType",
-		"ofType",
-		"typeHandler",
-	},
-	crud_tags = {
-		"select",
-		"update",
-		"delete",
-		"insert",
-	},
-	debug = false,
-}
-```
+## ⌨️ 命令
+
+调用 `require("nvim-mybatis").setup()` 后，可以使用以下命令：
+
+- `:MybatisJump`：在当前 Java Mapper 或 XML 映射文件之间跳转。如果 nvim-mybatis 找不到目标，则回退到 `vim.lsp.buf.definition()`。
+- `:MybatisGenerateTag`：为光标所在的 Mapper 方法生成 CRUD XML 标签。
+
+可选配置 `autocmd = true` 会保留原有的文件类型 autocmd 和 buffer-local `gd` 映射。设置为 `false` 后，可以只使用上述命令而不安装这些 autocmd。
 
 ## 📝 注意事项
 
-- **tree-sitter**: 需要安装并启用`Java`与`XML`的解析器
+- **[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)**：需要使用其 Java 与 XML 解析器。
+- 公开的配置、Lua API 和类型参考请查看生成的 `:help nvim-mybatis-api` 文档。
 
 ## 🤝 参与贡献
 

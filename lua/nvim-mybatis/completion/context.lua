@@ -3,7 +3,7 @@
 local M = {}
 
 local ts = vim.treesitter
-local config = require("nvim-mybatis.config"):get()
+local constants = require("nvim-mybatis.constants")
 local extract = require("nvim-mybatis.treesitter.extract")
 
 --- walk up from `node` to the enclosing Attribute node
@@ -46,7 +46,7 @@ function M.detect(bufnr)
 		value_node = attr:named_child(1),
 	}
 
-	if vim.tbl_contains(config.type_attributes, attr_name) then
+	if vim.tbl_contains(constants.TYPE_ATTRIBUTES, attr_name) then
 		return ctx
 	end
 
