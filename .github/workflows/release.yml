@@ -29,18 +29,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install stylua
-        run: |
-          curl -sL https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux-x86_64.zip \
-            -o /tmp/stylua.zip
-          mkdir -p "$HOME/.local/bin"
-          unzip -j /tmp/stylua.zip -d "$HOME/.local/bin"
+      - name: Set up StyLua
+        uses: ./.github/actions/setup-env
+        with:
+          stylua: true
 
       - name: Check formatting
         id: check
         continue-on-error: ${{ github.event_name != 'pull_request' }}
         run: |
-          "$HOME/.local/bin/stylua" --check lua/ tests/spec/
+          stylua --check lua/ tests/spec/
 
       - name: Record formatting result
         id: result
@@ -58,31 +56,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Neovim
-        uses: rhysd/action-setup-vim@v1
+      - name: Set up test environment
+        uses: ./.github/actions/setup-env
         with:
           neovim: true
-          version: stable
-
-      - name: Install tree-sitter CLI
-        run: |
-          cargo install --locked tree-sitter-cli --version 0.25.10
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          "$HOME/.cargo/bin/tree-sitter" --version
-
-      - name: Clone test dependencies
-        run: |
-          mkdir -p tests/deps
-          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim tests/deps/plenary.nvim
-          git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter tests/deps/nvim-treesitter
-
-      - name: Install tree-sitter parsers
-        run: |
-          nvim --headless -u tests/minimal_init.lua \
-            -c "lua require('nvim-treesitter').install({ 'java', 'xml' }):wait(300000)" \
-            -c "qa!"
-          test -f "$HOME/.local/share/nvim/site/parser/java.so"
-          test -f "$HOME/.local/share/nvim/site/parser/xml.so"
+          tree_sitter: true
+          test_dependencies: true
+          parsers: true
 
       - name: Run tests
         run: |
@@ -109,16 +89,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install stylua
-        run: |
-          curl -sL https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux-x86_64.zip \
-            -o /tmp/stylua.zip
-          mkdir -p "$HOME/.local/bin"
-          unzip -j /tmp/stylua.zip -d "$HOME/.local/bin"
+      - name: Set up StyLua
+        uses: ./.github/actions/setup-env
+        with:
+          stylua: true
 
       - name: Apply formatting
         run: |
-          "$HOME/.local/bin/stylua" lua/ tests/spec/
+          stylua lua/ tests/spec/
 
       - name: Commit formatted files
         uses: stefanzweifel/git-auto-commit-action@v4
@@ -167,10 +145,10 @@ jobs:
         with:
           vimdoc: nvim-mybatis
 
-      - name: Install Neovim
-        run: |
-          sudo apt update
-          sudo apt install -y neovim
+      - name: Set up Neovim
+        uses: ./.github/actions/setup-env
+        with:
+          neovim: true
 
       - name: Generate help tags
         run: nvim --headless -c 'helptags doc/' -c 'quit' 2>/dev/null
