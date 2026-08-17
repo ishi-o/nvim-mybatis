@@ -1,18 +1,258 @@
-name: Create Release
+name: CI and Release
 
 on:
+  pull_request:
   push:
+    branches:
+      - main
     tags:
-      - "v*"
+      - 'v*'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  create-release:
+  style_lint:
+    name: Style lint
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    outputs:
+      needs_apply: ${{ steps.result.outputs.needs_apply }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up StyLua
+        uses: ./.github/actions/setup-env
+        with:
+          stylua: true
+
+      - name: Check formatting
+        id: check
+        continue-on-error: ${{ github.event_name != 'pull_request' }}
+        run: |
+          stylua --check lua/ tests/spec/
+
+      - name: Record formatting result
+        id: result
+        if: always()
+        run: echo "needs_apply=${{ steps.check.outcome == 'failure' }}" >> "$GITHUB_OUTPUT"
+
+  test:
+    name: Test
+    needs: style_lint
+    if: >-
+      always() &&
+      needs.style_lint.result != 'cancelled' &&
+      needs.style_lint.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up test environment
+        uses: ./.github/actions/setup-env
+        with:
+          neovim: true
+          tree_sitter: true
+          test_dependencies: true
+          parsers: true
+
+      - name: Run tests
+        run: |
+          nvim --headless -u tests/minimal_init.lua \
+            -c "PlenaryBustedDirectory tests/spec/ {minimal_init = 'tests/minimal_init.lua'}"
+
+  style_apply:
+    name: Apply style
+    needs: [style_lint, test]
+    if: >-
+      always() &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        github.event_name == 'workflow_dispatch'
+      ) &&
+      needs.style_lint.result == 'success' &&
+      needs.test.result == 'success' &&
+      needs.style_lint.outputs.needs_apply == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      commit: ${{ steps.apply.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up StyLua
+        uses: ./.github/actions/setup-env
+        with:
+          stylua: true
+
+      - name: Apply formatting
+        run: |
+          stylua lua/ tests/spec/
+
+      - name: Commit formatted files
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: ${{ github.ref_name }}
+          commit_message: 'style: apply StyLua formatting'
+          file_pattern: |
+            lua/
+            tests/spec/
+
+      - name: Capture formatted commit
+        id: apply
+        run: |
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  generate_docs:
+    name: Generate Vimdoc
+    needs: [style_lint, test, style_apply]
+    if: >-
+      always() &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        github.event_name == 'workflow_dispatch'
+      ) &&
+      needs.style_lint.result == 'success' &&
+      needs.test.result == 'success' &&
+      (needs.style_apply.result == 'success' || needs.style_apply.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      commit: ${{ steps.capture.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.style_apply.outputs.commit || github.sha }}
+          fetch-depth: 0
+
+      - name: Clean doc directory
+        run: |
+          mkdir -p doc
+          find doc -maxdepth 1 -type f ! -name '*.txt' ! -name 'tags' -delete
+
+      - name: Convert README.md with panvimdoc
+        uses: kdheepak/panvimdoc@main
+        with:
+          vimdoc: nvim-mybatis
+
+      - name: Set up Neovim
+        uses: ./.github/actions/setup-env
+        with:
+          neovim: true
+
+      - name: Generate help tags
+        run: nvim --headless -c 'helptags doc/' -c 'quit' 2>/dev/null
+
+      - name: Commit generated documentation
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          branch: ${{ github.ref_name }}
+          commit_message: 'chore(docs): auto-generate vimdoc'
+          file_pattern: |
+            doc/*.txt
+            doc/tags
+
+      - name: Capture generated commit
+        id: capture
+        run: echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  auto_tag:
+    name: Auto-tag
+    needs: [style_lint, test, style_apply, generate_docs]
+    if: >-
+      always() &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        github.event_name == 'workflow_dispatch'
+      ) &&
+      needs.style_lint.result == 'success' &&
+      needs.test.result == 'success' &&
+      (needs.style_apply.result == 'success' || needs.style_apply.result == 'skipped') &&
+      needs.generate_docs.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      created: ${{ steps.tag.outputs.created }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Read version
+        id: version
+        run: |
+          VERSION=$(sed -n 's/^local VERSION = "\(.*\)"$/\1/p' lua/nvim-mybatis/version.lua)
+          if [ -z "$VERSION" ]; then
+            echo "Failed to read version from lua/nvim-mybatis/version.lua" >&2
+            exit 1
+          fi
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create tag
+        id: tag
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          TARGET_SHA: ${{ needs.generate_docs.outputs.commit || needs.style_apply.outputs.commit }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git fetch origin "$BRANCH" --tags
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "Tag $TAG already exists, nothing to do."
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -z "$TARGET_SHA" ]; then
+            TARGET_SHA=$(git rev-parse "origin/$BRANCH")
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$TAG" "$TARGET_SHA"
+          git push origin "$TAG"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Release
+    needs: [style_lint, test, style_apply, generate_docs, auto_tag]
+    if: >-
+      always() &&
+      (
+        (
+          github.event_name == 'push' &&
+          startsWith(github.ref, 'refs/tags/v')
+        ) ||
+        (
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+            github.event_name == 'workflow_dispatch'
+          ) &&
+          needs.style_lint.result == 'success' &&
+          needs.test.result == 'success' &&
+          needs.generate_docs.result == 'success' &&
+          needs.auto_tag.result == 'success' &&
+          needs.auto_tag.outputs.created == 'true'
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
+          tag_name: ${{ needs.auto_tag.outputs.tag || github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

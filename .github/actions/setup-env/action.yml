@@ -1,0 +1,183 @@
+name: Setup CI environment
+description: Install and cache the tools and dependencies used by CI
+
+inputs:
+  stylua:
+    description: Install StyLua
+    required: false
+    default: "false"
+  neovim:
+    description: Install the latest stable Neovim
+    required: false
+    default: "false"
+  tree_sitter:
+    description: Install the Tree-sitter CLI
+    required: false
+    default: "false"
+  tree_sitter_version:
+    description: Tree-sitter CLI version to install
+    required: false
+    default: "0.25.10"
+  test_dependencies:
+    description: Clone the test dependencies
+    required: false
+    default: "false"
+  parsers:
+    description: Install the Java and XML Tree-sitter parsers
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve StyLua version
+      id: stylua_version
+      if: inputs.stylua == 'true'
+      shell: bash
+      run: |
+        version="$(curl -fsSL https://api.github.com/repos/JohnnyMorganz/StyLua/releases/latest | jq -er '.tag_name')"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Cache StyLua
+      id: stylua_cache
+      if: inputs.stylua == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cache/nvim-mybatis/stylua
+        key: stylua-${{ runner.os }}-${{ steps.stylua_version.outputs.version }}
+
+    - name: Install StyLua
+      if: inputs.stylua == 'true' && steps.stylua_cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        STYLUA_VERSION: ${{ steps.stylua_version.outputs.version }}
+      run: |
+        install_dir="$HOME/.cache/nvim-mybatis/stylua"
+        mkdir -p "$install_dir"
+        curl -fsSL "https://github.com/JohnnyMorganz/StyLua/releases/download/${STYLUA_VERSION}/stylua-linux-x86_64.zip" \
+          -o "$RUNNER_TEMP/stylua.zip"
+        unzip -j -o "$RUNNER_TEMP/stylua.zip" -d "$install_dir"
+        chmod +x "$install_dir/stylua"
+
+    - name: Add StyLua to PATH
+      if: inputs.stylua == 'true'
+      shell: bash
+      run: |
+        echo "$HOME/.cache/nvim-mybatis/stylua" >> "$GITHUB_PATH"
+        "$HOME/.cache/nvim-mybatis/stylua/stylua" --version
+
+    - name: Resolve Neovim stable version
+      id: neovim_version
+      if: inputs.neovim == 'true'
+      shell: bash
+      run: |
+        version="$(curl -fsSL https://api.github.com/repos/neovim/neovim/releases/latest | jq -er '.tag_name')"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+
+    - name: Cache Neovim
+      id: neovim_cache
+      if: inputs.neovim == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cache/nvim-mybatis/neovim
+        key: neovim-${{ runner.os }}-${{ steps.neovim_version.outputs.version }}
+
+    - name: Install Neovim
+      if: inputs.neovim == 'true' && steps.neovim_cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        NEOVIM_VERSION: ${{ steps.neovim_version.outputs.version }}
+      run: |
+        install_dir="$HOME/.cache/nvim-mybatis/neovim"
+        mkdir -p "$install_dir"
+        curl -fsSL "https://github.com/neovim/neovim/releases/download/${NEOVIM_VERSION}/nvim-linux-x86_64.tar.gz" \
+          -o "$RUNNER_TEMP/neovim.tar.gz"
+        tar -xzf "$RUNNER_TEMP/neovim.tar.gz" --strip-components=1 -C "$install_dir"
+
+    - name: Add Neovim to PATH
+      if: inputs.neovim == 'true'
+      shell: bash
+      run: |
+        echo "$HOME/.cache/nvim-mybatis/neovim/bin" >> "$GITHUB_PATH"
+        "$HOME/.cache/nvim-mybatis/neovim/bin/nvim" --version | head -n 1
+
+    - name: Cache Tree-sitter CLI
+      id: tree_sitter_cache
+      if: inputs.tree_sitter == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.cargo/bin/tree-sitter
+        key: tree-sitter-cli-${{ runner.os }}-${{ inputs.tree_sitter_version }}
+
+    - name: Install Tree-sitter CLI
+      if: inputs.tree_sitter == 'true' && steps.tree_sitter_cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        TREE_SITTER_VERSION: ${{ inputs.tree_sitter_version }}
+      run: cargo install --locked tree-sitter-cli --version "$TREE_SITTER_VERSION"
+
+    - name: Add Tree-sitter CLI to PATH
+      if: inputs.tree_sitter == 'true'
+      shell: bash
+      run: |
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        "$HOME/.cargo/bin/tree-sitter" --version
+
+    - name: Clone test dependencies
+      if: inputs.test_dependencies == 'true'
+      shell: bash
+      run: |
+        mkdir -p tests/deps
+        git clone --depth 1 https://github.com/nvim-lua/plenary.nvim tests/deps/plenary.nvim
+        git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter tests/deps/nvim-treesitter
+
+    - name: Cache Tree-sitter parsers
+      id: parsers_cache
+      if: inputs.parsers == 'true'
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.local/share/nvim/site/parser
+        key: nvim-treesitter-parsers-${{ runner.os }}-${{ steps.neovim_version.outputs.version }}-${{ inputs.tree_sitter_version }}-${{ hashFiles('tests/deps/nvim-treesitter/**') }}
+
+    - name: Install Tree-sitter parsers
+      if: inputs.parsers == 'true' && steps.parsers_cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        nvim --headless -u tests/minimal_init.lua \
+          -c "lua require('nvim-treesitter').install({ 'java', 'xml' }):wait(300000)" \
+          -c "qa!"
+
+    - name: Verify Tree-sitter parsers
+      if: inputs.parsers == 'true'
+      shell: bash
+      run: |
+        test -f "$HOME/.local/share/nvim/site/parser/java.so"
+        test -f "$HOME/.local/share/nvim/site/parser/xml.so"
+
+    - name: Save StyLua cache
+      if: inputs.stylua == 'true' && steps.stylua_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/nvim-mybatis/stylua
+        key: ${{ steps.stylua_cache.outputs.cache-primary-key }}
+
+    - name: Save Neovim cache
+      if: inputs.neovim == 'true' && steps.neovim_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/nvim-mybatis/neovim
+        key: ${{ steps.neovim_cache.outputs.cache-primary-key }}
+
+    - name: Save Tree-sitter CLI cache
+      if: inputs.tree_sitter == 'true' && steps.tree_sitter_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cargo/bin/tree-sitter
+        key: ${{ steps.tree_sitter_cache.outputs.cache-primary-key }}
+
+    - name: Save Tree-sitter parsers cache
+      if: inputs.parsers == 'true' && steps.parsers_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.local/share/nvim/site/parser
+        key: ${{ steps.parsers_cache.outputs.cache-primary-key }}

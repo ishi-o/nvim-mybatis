@@ -41,9 +41,6 @@ A lightweight Neovim plugin powered by Tree-sitter for enhanced navigation betwe
 ```lua
 {
   "ishi-o/nvim-mybatis",
-  dependencies = {
-    "nvim-treesitter/nvim-treesitter",
-  },
   opts = {},
 }
 ```
@@ -81,13 +78,15 @@ require("blink.cmp").setup({
 
 ```lua
 --- @class mybatis.NvimMybatisConfig
---- @field autocmd? boolean Enable nvim-mybatis
+--- @field autocmd? boolean Enable auto-loading of nvim-mybatis. When enabled, hooks into LSP jump behavior (vim.lsp.buf.definition) on file open
 --- @field xml_search_pattern? string[] Patterns to search for XML files
---- @field mapper_name_pattern? string[] Patterns to identify Mapper files for plugin loading
---- @field classpath? string[] Relative paths from classpath to project root
---- @field root_file? string[] Root build files
---- @field refresh_strategy? "os_watch"|"manual_watch"|"polling"|"none" Refresh strategy
---- @field polling_interval? integer Polling interval (ms)
+--- @field xml_search_tool? mybatis.utils.SearchTool Tool to search XML files, "default": try all tools in order "rg", "ag", "grep"
+--- @field completion_provider? mybatis.completion.Provider XML Completion provider, "default": try all providers in order "index", "jdtls"
+--- @field mapper_name_pattern? string[] Lua string.match patterns to identify Mapper XML files. Plugin navigation is only enabled when an opened XML filename matches these patterns
+--- @field classpaths? { java?: string[], xml?: string[] } Relative paths from classpath to project/module root
+--- @field root_file? string[] Root build files to locate project/module root (searches upward from current file)
+--- @field type_attributes? string[] XML attributes which indicate a type
+--- @field crud_tags? string[] XML tags which indicate a crud mapping
 --- @field debug? boolean Enable debug mode
 
 --- @type NvimMybatisConfig
@@ -96,30 +95,46 @@ local DEFAULT_CONFIG = {
 	xml_search_pattern = {
 		"**/*Mapper*.xml",
 	},
+	xml_search_tool = "default",
+	completion_provider = "default",
 	mapper_name_pattern = {
 		"[Mm]apper",
 	},
-	classpath = {
-		"src/main/java",
+	classpaths = {
+		java = {
+			"src/main/java",
+		},
+		xml = {
+			"src/main/resources",
+		},
 	},
 	root_file = {
 		"pom.xml",
 		"build.gradle",
 		"build.gradle.kts",
 	},
-	refresh_strategy = "manual_watch",
-	polling_interval = 10000,
+	type_attributes = {
+		"namespace",
+		"resultType",
+		"parameterType",
+		"type",
+		"javaType",
+		"ofType",
+		"typeHandler",
+	},
+	crud_tags = {
+		"select",
+		"update",
+		"delete",
+		"insert",
+	},
 	debug = false,
 }
 ```
 
 ## 📝 Notes
 
-- **treesitter Dependency**: Requires Java and XML parsers (`:TSInstall java xml`)
-- **ripgrep Dependency**: The plugin relies on ripgrep (rg) for fast file searching and indexing.
-- **File Pattern Matching**: `mapper_name_pattern` controls which files activate the plugin's navigation features
-- **Project Detection**: Searches upward for `root_file` patterns to locate project boundaries
-- **Determines how the plugin updates its internal class index**: `os_watch` (filesystem events via libuv, may fail), `manual_watch` (monitors specific directories), `polling` (periodic scans), or `none` (no auto-refresh).
+- **tree-sitter**: Requires Java and XML parsers
 
 ## 🤝 Contributing
 

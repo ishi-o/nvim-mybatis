@@ -8,28 +8,55 @@ local DEFAULT_CONFIG = {
 	xml_search_pattern = {
 		"**/*Mapper*.xml",
 	},
+	xml_search_tool = "default",
+	completion_provider = "default",
 	mapper_name_pattern = {
 		"[Mm]apper",
 	},
-	classpath = {
-		"src/main/java",
+	classpaths = {
+		java = {
+			"src/main/java",
+		},
+		xml = {
+			"src/main/resources",
+		},
 	},
 	root_file = {
 		"pom.xml",
 		"build.gradle",
 		"build.gradle.kts",
 	},
-	refresh_strategy = "manual_watch",
-	polling_interval = 10000,
+	type_attributes = {
+		"namespace",
+		"resultType",
+		"parameterType",
+		"type",
+		"javaType",
+		"ofType",
+		"typeHandler",
+	},
+	crud_tags = {
+		"select",
+		"update",
+		"delete",
+		"insert",
+	},
 	debug = false,
 }
 
 --- @type mybatis.NvimMybatisConfig
-M.values = DEFAULT_CONFIG
+M.values = vim.deepcopy(DEFAULT_CONFIG)
 
 --- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
-	M.values = vim.tbl_deep_extend("force", M.values, config or {})
+	local values = vim.tbl_deep_extend("force", vim.deepcopy(DEFAULT_CONFIG), config or {})
+	-- Keep the table identity stable because other modules retain this reference.
+	for key in pairs(M.values) do
+		M.values[key] = nil
+	end
+	for key, value in pairs(values) do
+		M.values[key] = value
+	end
 	return M
 end
 
@@ -37,22 +64,5 @@ end
 function M.get()
 	return M.values
 end
-
-M.TYPE_ATTRS = {
-	["namespace"] = true,
-	["resultType"] = true,
-	["parameterType"] = true,
-	["type"] = true,
-	["javaType"] = true,
-	["ofType"] = true,
-	["typeHandler"] = true,
-}
-
-M.CRUD_TAGS = {
-	["select"] = true,
-	["update"] = true,
-	["delete"] = true,
-	["insert"] = true,
-}
 
 return M

@@ -3,9 +3,9 @@ local M = {}
 
 local ts = vim.treesitter
 local logger = require("nvim-mybatis.logger")
-local conf = require("nvim-mybatis.config")
-local TYPE_ATTRS = conf.TYPE_ATTRS
-local CRUD_TAGS = conf.CRUD_TAGS
+local config = require("nvim-mybatis.config"):get()
+local TYPE_ATTRS = config.type_attributes
+local CRUD_TAGS = config.crud_tags
 
 --- extract class name
 --- @param node TSNode
@@ -18,7 +18,7 @@ function M.classname(node, bufnr)
 			local name_node = current:named_child(0)
 			if name_node then
 				local name_text = ts.get_node_text(name_node, bufnr)
-				if TYPE_ATTRS[name_text] then
+				if vim.tbl_contains(TYPE_ATTRS, name_text) then
 					local value_node = current:named_child(1)
 					if value_node then
 						local text = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")
@@ -45,14 +45,14 @@ function M.crud_id(node, bufnr)
 		return nil
 	end
 	local name = current:named_child(0)
-	if not name or vim.treesitter.get_node_text(name, bufnr) ~= "id" then
+	if not name or ts.get_node_text(name, bufnr) ~= "id" then
 		return nil
 	end
 	local value = current:named_child(1)
 	if not value then
 		return nil
 	end
-	local id_value = vim.treesitter.get_node_text(value, bufnr):gsub("['\"]", "")
+	local id_value = ts.get_node_text(value, bufnr):gsub("['\"]", "")
 	local stag = current
 	while stag and stag:type() ~= "STag" do
 		stag = stag:parent()
@@ -64,8 +64,8 @@ function M.crud_id(node, bufnr)
 	if not tag_name then
 		return nil
 	end
-	local tag = vim.treesitter.get_node_text(tag_name, bufnr)
-	if CRUD_TAGS[tag] then
+	local tag = ts.get_node_text(tag_name, bufnr)
+	if vim.tbl_contains(CRUD_TAGS, tag) then
 		return id_value
 	end
 	return nil
@@ -82,7 +82,7 @@ function M.belong_namespace(node, bufnr)
 			local start_tag = current:named_child(0)
 			if start_tag then
 				local name_node = start_tag:named_child(0)
-				if name_node and vim.treesitter.get_node_text(name_node, bufnr) == "mapper" then
+				if name_node and ts.get_node_text(name_node, bufnr) == "mapper" then
 					--- @type TSNode[]
 					local attrs = {}
 					for i = 0, start_tag:named_child_count() - 1 do
@@ -93,10 +93,13 @@ function M.belong_namespace(node, bufnr)
 					end
 					for _, attr in ipairs(attrs or {}) do
 						local attr_name_node = attr:named_child(0)
-						if attr_name_node and vim.treesitter.get_node_text(attr_name_node, bufnr) == "namespace" then
+						if
+							attr_name_node
+							and ts.get_node_text(attr_name_node, bufnr) == "namespace"
+						then
 							local value_node = attr:named_child(1)
 							if value_node then
-								local text = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+								local text = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")
 								return text
 							end
 						end
@@ -121,11 +124,11 @@ function M.refid(node, bufnr)
 		if current:type() == "Attribute" then
 			local name_node = current:named_child(0)
 			if name_node then
-				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
+				local name_text = ts.get_node_text(name_node, bufnr)
 				if name_text == "refid" then
 					local value_node = current:named_child(1)
 					if value_node then
-						local text = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+						local text = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")
 						return text
 					end
 				end
@@ -156,14 +159,14 @@ function M.resultType(node, bufnr)
 	local function parse_type(type_node)
 		local node_type = type_node:type()
 		if node_type == "type_identifier" then
-			return vim.treesitter.get_node_text(type_node, bufnr)
+			return ts.get_node_text(type_node, bufnr)
 		elseif node_type == "generic_type" then
 			-- type_identifier
 			local container_node = type_node:named_child(0)
 			if not container_node then
 				return nil
 			end
-			local container_name = vim.treesitter.get_node_text(container_node, bufnr)
+			local container_name = ts.get_node_text(container_node, bufnr)
 			-- type_arguments
 			local type_args_node = type_node:named_child(1)
 			if not type_args_node then
@@ -200,11 +203,11 @@ function M.property(node, bufnr)
 		if current:type() == "Attribute" then
 			local name_node = current:named_child(0)
 			if name_node then
-				local name_text = vim.treesitter.get_node_text(name_node, bufnr)
+				local name_text = ts.get_node_text(name_node, bufnr)
 				if name_text == "property" then
 					local value_node = current:named_child(1)
 					if value_node then
-						property_value = vim.treesitter.get_node_text(value_node, bufnr):gsub("['\"]", "")
+						property_value = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")
 						break
 					end
 				end
@@ -225,19 +228,19 @@ function M.property(node, bufnr)
 				if child:type() == "STag" then
 					local tag_name_node = child:named_child(0)
 					if tag_name_node then
-						local tag_name = vim.treesitter.get_node_text(tag_name_node, bufnr)
+						local tag_name = ts.get_node_text(tag_name_node, bufnr)
 						if tag_name == "resultMap" then
 							for attr in child:iter_children() do
 								if attr:type() == "Attribute" then
 									local attr_name_node = attr:named_child(0)
 									if attr_name_node then
-										local attr_name = vim.treesitter.get_node_text(attr_name_node, bufnr)
+										local attr_name = ts.get_node_text(attr_name_node, bufnr)
 										if attr_name == "type" then
 											local attr_value_node = attr:named_child(1)
 											if attr_value_node then
-												local type_value = vim.treesitter
-													.get_node_text(attr_value_node, bufnr)
-													:gsub("['\"]", "")
+												local type_value =
+													ts.get_node_text(attr_value_node, bufnr)
+														:gsub("['\"]", "")
 												return type_value, property_value
 											end
 										end
@@ -280,10 +283,5 @@ function M.interface_method(node, bufnr)
 
 	return interface, method
 end
-
---- @param node TSNode
---- @param bufnr integer
---- @return string? resultType
-function M.resultTypeFromJava(node, bufnr) end
 
 return M

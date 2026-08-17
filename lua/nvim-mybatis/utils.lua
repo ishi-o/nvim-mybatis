@@ -70,6 +70,9 @@ function M.get_java_builtin_types()
 	}
 end
 
+--- default directory name patterns excluded when scanning java sources
+M.EXCLUDED_DIRS = { "^%.", "target", "build" }
+
 --- scan dir_path recursively
 --- @param dir_path string
 --- @param current_pkg string
@@ -77,7 +80,7 @@ end
 --- @return string[] classes All fully qualified class name in `dir_path`
 function M.scan_java_classes(dir_path, current_pkg, exclude_dirs)
 	local classes = {}
-	exclude_dirs = exclude_dirs or { "^%.", "target", "build" }
+	exclude_dirs = exclude_dirs or M.EXCLUDED_DIRS
 
 	local function should_exclude(dir_name)
 		for _, pattern in ipairs(exclude_dirs) do
@@ -116,10 +119,19 @@ function M.scan_java_classes(dir_path, current_pkg, exclude_dirs)
 end
 
 --- @param func fun(classpath: string): boolean?
+--- @param classpaths string[]
 --- @return boolean
-function M.foreach_classpath(func)
+function M.foreach_classpath(func, classpaths)
 	local project_root = M.get_module_root()
-	for _, classpath in ipairs(config.classpath) do
+	if not project_root then
+		logger.warn(
+			"Module root not found (missing root file: "
+				.. table.concat(config.root_file, ", ")
+				.. ")"
+		)
+		return false
+	end
+	for _, classpath in ipairs(classpaths) do
 		if func(project_root .. "/" .. classpath .. "/") then
 			return true
 		end
@@ -127,36 +139,97 @@ function M.foreach_classpath(func)
 	return false
 end
 
+--- @type mybatis.utils.SearchToolHandler
+local function search_mapper_fallback_rg(namespace_pattern, mapper_dir)
+	local glob_args = {}
+	for _, glob_pattern in ipairs(config.xml_search_pattern) do
+		table.insert(glob_args, string.format('--glob="%s"', glob_pattern))
+	end
+	if #glob_args == 0 then
+		table.insert(glob_args, '--glob="*.xml"')
+	end
+
+	local glob_str = table.concat(glob_args, " ")
+
+	local cmd = string.format(
+		"rg -l --color=never --fixed-strings %s '%s' '%s'",
+		glob_str,
+		namespace_pattern,
+		mapper_dir
+	)
+	local result = vim.fn.system(cmd)
+	if vim.v.shell_error == 0 then
+		return result:match("[^\r\n]+")
+	end
+	return nil
+end
+
+--- @type mybatis.utils.SearchToolHandler
+local function search_mapper_fallback_ag(namespace_pattern, mapper_dir)
+	local glob_args = {}
+	for _, glob_pattern in ipairs(config.xml_search_pattern) do
+		table.insert(glob_args, string.format("-G '%s'", glob_pattern))
+	end
+	if #glob_args == 0 then
+		table.insert(glob_args, "-G '*.xml'")
+	end
+	local glob_str = table.concat(glob_args, " ")
+
+	local cmd = string.format("ag -l %s '%s' '%s'", glob_str, namespace_pattern, mapper_dir)
+	local result = vim.fn.system(cmd)
+	if vim.v.shell_error == 0 then
+		return result:match("[^\r\n]+")
+	end
+	return nil
+end
+
+--- @type mybatis.utils.SearchToolHandler
+local function search_mapper_fallback_grep(namespace_pattern, mapper_dir)
+	vim.fn.grep({
+		args = { "-r", "-l", "--include=*.xml", vim.pesc(namespace_pattern), mapper_dir },
+	})
+
+	local qf = vim.fn.getqflist()
+	if qf and #qf > 0 then
+		return qf[1].filename
+	end
+
+	return nil
+end
+
 --- search mappers.xml by namespace
 --- @param namespace string
 --- @return string? file
 function M.search_mapper(namespace)
-	local project_root = M.get_module_root()
-	local xml_files = {}
-	for _, xml_glob in ipairs(config.xml_search_pattern) do
-		local search_path = project_root .. "/" .. xml_glob
-		local files = vim.fn.glob(search_path, true, true)
-		vim.list_extend(xml_files, files)
-	end
-	if #xml_files == 0 then
-		logger.warn("No XML files found for mapper: " .. namespace)
+	local namespace_pattern = string.format('namespace="%s"', namespace)
+	local result = nil
+	--- @type table<mybatis.utils.SearchTool, mybatis.utils.SearchToolHandler>
+	local tools = {
+		rg = search_mapper_fallback_rg,
+		ag = search_mapper_fallback_ag,
+		grep = search_mapper_fallback_grep,
+	}
+	--- @type mybatis.utils.SearchTool[]
+	local tool_order = { "rg", "ag", "grep" }
+	M.foreach_classpath(function(classpath)
+		if config.xml_search_tool ~= "default" then
+			return tools[config.xml_search_tool](namespace_pattern, classpath)
+		end
+		for _, name in ipairs(tool_order) do
+			if name == "grep" or vim.fn.executable(name) ~= 0 then
+				result = tools[name](namespace_pattern, classpath)
+				if result then
+					return true
+				end
+			end
+		end
+		return false
+	end, config.classpaths.xml)
+	if result == nil then
+		logger.warn("No XML file found for mapper: " .. namespace)
 		return nil
 	end
-
-	local namespace_pattern = string.format("'namespace=\"%s\"'", namespace)
-	local candidate_files = {}
-	local cmd = { "rg", "-l", "--color=never", "--fixed-strings", namespace_pattern }
-	for _, file in ipairs(xml_files) do
-		table.insert(cmd, file)
-	end
-	local handle = io.popen(table.concat(cmd, " "))
-	if handle then
-		for line in handle:lines() do
-			table.insert(candidate_files, line)
-		end
-		handle:close()
-	end
-	return candidate_files[1]
+	return result
 end
 
 return M

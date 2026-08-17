@@ -1,0 +1,11 @@
+# Test dependencies cloned locally / in CI
+tests/deps/
+
+# java build / IDE artifacts
+.classpath
+.project
+.settings/
+target/
+build/
+
+*.log

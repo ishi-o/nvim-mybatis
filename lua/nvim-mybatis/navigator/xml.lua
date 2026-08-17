@@ -23,7 +23,10 @@ function M.navigate_from_xml(bufnr)
 	if crud_id then
 		local current_namespace = treesitter.extract.belong_namespace(node, bufnr)
 		if current_namespace then
-			return treesitter.navigate(current_namespace:gsub("%.", "/") .. ".java", treesitter.query.method(crud_id))
+			return treesitter.navigate(
+				current_namespace:gsub("%.", "/") .. ".java",
+				treesitter.query.method(crud_id)
+			)
 		end
 	end
 	-- if the cursor on `refid` attribute
@@ -36,20 +39,14 @@ function M.navigate_from_xml(bufnr)
 			return treesitter.navigate_mapper(namespace, treesitter.query.sqlid(sql_id))
 		end
 	end
-	-- if the cursor on `extends` attribute
-	local resultMap = treesitter.extract.resultMap(node, bufnr)
-	if resultMap then
-		if resultMap:find("%.") == nil then
-			return treesitter.locate(treesitter.query.resultMap(resultMap))
-		else
-			local namespace, resMap = resultMap:match("^(.*)%.([^%.]+)$")
-			return treesitter.navigate_mapper(namespace, treesitter.query.resultMap(resMap))
-		end
-	end
+	-- TODO: navigate from `extends` / `resultMap` attributes once resultMap() extraction is fixed
 	-- if the cursor on `property` attribute
 	local clsname, property = treesitter.extract.property(node, bufnr)
 	if clsname and property then
-		return treesitter.navigate(clsname:gsub("%.", "/") .. ".java", treesitter.query.field(property))
+		return treesitter.navigate(
+			clsname:gsub("%.", "/") .. ".java",
+			treesitter.query.field(property)
+		)
 	end
 	return false
 end

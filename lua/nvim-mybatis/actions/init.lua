@@ -43,10 +43,15 @@ function M.setup()
 	vim.lsp.buf_request_all = function(bufnr, method, make_params, handler)
 		if method == "textDocument/codeAction" then
 			-- switch handler
-			return original_buf_request_all(bufnr, method, make_params, function(results, ctx, config)
-				inject(results, ctx)
-				return handler(results, ctx, config)
-			end)
+			return original_buf_request_all(
+				bufnr,
+				method,
+				make_params,
+				function(results, ctx, config)
+					inject(results, ctx)
+					return handler(results, ctx, config)
+				end
+			)
 		end
 		return original_buf_request_all(bufnr, method, make_params, handler)
 	end
