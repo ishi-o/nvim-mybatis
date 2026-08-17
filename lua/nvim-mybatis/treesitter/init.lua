@@ -1,3 +1,6 @@
+--- @module 'nvim-mybatis.treesitter'
+--- Tree-sitter helpers used by the public navigation API.
+
 local M = {}
 
 local utils = require("nvim-mybatis.utils")

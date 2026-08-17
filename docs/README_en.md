@@ -32,6 +32,7 @@ A lightweight Neovim plugin powered by Tree-sitter for enhanced navigation betwe
 
 - `nvim-mybatis` injects `Code Action` into the language server named `jdtls`. Qualified entries will be provided when `vim.lsp.buf.code_action` is invoked, which requires a connected `jdtls` server.
 - `Generate MyBatis Tag`: When the cursor points to a method in a Mapper interface, this action intelligently determines the `CRUD` type and generates the corresponding `XML tag` snippet in the associated `XML` file.
+- The same action is available as the `:MybatisGenerateTag` command.
 
 ## 📦 Installation
 
@@ -76,65 +77,21 @@ require("blink.cmp").setup({
 
 ## ⚙️ Configuration
 
-```lua
---- @class mybatis.NvimMybatisConfig
---- @field autocmd? boolean Enable auto-loading of nvim-mybatis. When enabled, hooks into LSP jump behavior (vim.lsp.buf.definition) on file open
---- @field xml_search_pattern? string[] Patterns to search for XML files
---- @field xml_search_tool? mybatis.utils.SearchTool Tool to search XML files, "default": try all tools in order "rg", "ag", "grep"
---- @field completion_provider? mybatis.completion.Provider XML Completion provider, "default": try all providers in order "index", "jdtls"
---- @field mapper_name_pattern? string[] Lua string.match patterns to identify Mapper XML files. Plugin navigation is only enabled when an opened XML filename matches these patterns
---- @field classpaths? { java?: string[], xml?: string[] } Relative paths from classpath to project/module root
---- @field root_file? string[] Root build files to locate project/module root (searches upward from current file)
---- @field type_attributes? string[] XML attributes which indicate a type
---- @field crud_tags? string[] XML tags which indicate a crud mapping
---- @field debug? boolean Enable debug mode
+Pass configuration through the plugin's `opts` table. See `:help nvim-mybatis-api` for the available options and defaults.
 
---- @type NvimMybatisConfig
-local DEFAULT_CONFIG = {
-	autocmd = true,
-	xml_search_pattern = {
-		"**/*Mapper*.xml",
-	},
-	xml_search_tool = "default",
-	completion_provider = "default",
-	mapper_name_pattern = {
-		"[Mm]apper",
-	},
-	classpaths = {
-		java = {
-			"src/main/java",
-		},
-		xml = {
-			"src/main/resources",
-		},
-	},
-	root_file = {
-		"pom.xml",
-		"build.gradle",
-		"build.gradle.kts",
-	},
-	type_attributes = {
-		"namespace",
-		"resultType",
-		"parameterType",
-		"type",
-		"javaType",
-		"ofType",
-		"typeHandler",
-	},
-	crud_tags = {
-		"select",
-		"update",
-		"delete",
-		"insert",
-	},
-	debug = false,
-}
-```
+## ⌨️ Commands
+
+After calling `require("nvim-mybatis").setup()`, the following commands are available:
+
+- `:MybatisJump`: Navigate from the current Java mapper or XML mapping file. If nvim-mybatis cannot find a target, it falls back to `vim.lsp.buf.definition()`.
+- `:MybatisGenerateTag`: Generate the CRUD XML tag for the mapper method under the cursor.
+
+The optional `autocmd = true` setting keeps the existing filetype autocmds and buffer-local `gd` mappings. Set it to `false` to use the commands without installing those autocmds.
 
 ## 📝 Notes
 
-- **tree-sitter**: Requires Java and XML parsers
+- **[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)**: Required for the Java and XML parsers.
+- The public configuration, Lua API, and type reference is available in the generated `:help nvim-mybatis-api` documentation.
 
 ## 🤝 Contributing
 

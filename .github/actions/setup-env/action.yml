@@ -6,6 +6,14 @@ inputs:
     description: Install StyLua
     required: false
     default: "false"
+  emmylua_doc:
+    description: Install EmmyLua documentation generator
+    required: false
+    default: "false"
+  emmylua_doc_version:
+    description: EmmyLua documentation generator version
+    required: false
+    default: "0.25.1"
   neovim:
     description: Install the latest stable Neovim
     required: false
@@ -71,6 +79,28 @@ runs:
       run: |
         echo "$HOME/.cache/nvim-mybatis/stylua" >> "$GITHUB_PATH"
         "$HOME/.cache/nvim-mybatis/stylua/stylua" --version
+
+    - name: Cache EmmyLua documentation generator
+      id: emmylua_doc_cache
+      if: inputs.emmylua_doc == 'true'
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.cargo/bin/emmylua_doc_cli
+        key: emmylua-doc-cli-${{ runner.os }}-${{ inputs.emmylua_doc_version }}
+
+    - name: Install EmmyLua documentation generator
+      if: inputs.emmylua_doc == 'true' && steps.emmylua_doc_cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        EMMYLUA_DOC_VERSION: ${{ inputs.emmylua_doc_version }}
+      run: cargo install --locked emmylua_doc_cli --version "$EMMYLUA_DOC_VERSION"
+
+    - name: Add EmmyLua documentation generator to PATH
+      if: inputs.emmylua_doc == 'true'
+      shell: bash
+      run: |
+        echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        "$HOME/.cargo/bin/emmylua_doc_cli" --version
 
     - name: Resolve Neovim stable version
       id: neovim_version
@@ -180,6 +210,13 @@ runs:
       with:
         path: ~/.cache/nvim-mybatis/stylua
         key: ${{ steps.stylua_cache.outputs.cache-primary-key }}
+
+    - name: Save EmmyLua documentation generator cache
+      if: inputs.emmylua_doc == 'true' && steps.emmylua_doc_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.cargo/bin/emmylua_doc_cli
+        key: ${{ steps.emmylua_doc_cache.outputs.cache-primary-key }}
 
     - name: Save Neovim cache
       if: inputs.neovim == 'true' && steps.neovim_cache.outputs.cache-hit != 'true'
