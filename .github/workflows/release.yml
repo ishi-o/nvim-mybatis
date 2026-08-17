@@ -27,7 +27,7 @@ jobs:
     outputs:
       needs_apply: ${{ steps.result.outputs.needs_apply }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up StyLua
         uses: ./.github/actions/setup-env
@@ -54,7 +54,7 @@ jobs:
       needs.style_lint.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up test environment
         uses: ./.github/actions/setup-env
@@ -87,7 +87,7 @@ jobs:
     outputs:
       commit: ${{ steps.apply.outputs.commit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up StyLua
         uses: ./.github/actions/setup-env
@@ -99,7 +99,7 @@ jobs:
           stylua lua/ tests/spec/
 
       - name: Commit formatted files
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           branch: ${{ github.ref_name }}
           commit_message: 'style: apply StyLua formatting'
@@ -130,7 +130,7 @@ jobs:
     outputs:
       commit: ${{ steps.capture.outputs.commit }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.style_apply.outputs.commit || github.sha }}
           fetch-depth: 0
@@ -154,7 +154,7 @@ jobs:
         run: nvim --headless -c 'helptags doc/' -c 'quit' 2>/dev/null
 
       - name: Commit generated documentation
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           branch: ${{ github.ref_name }}
           commit_message: 'chore(docs): auto-generate vimdoc'
@@ -186,7 +186,7 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       created: ${{ steps.tag.outputs.created }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -250,7 +250,7 @@ jobs:
       contents: write
     steps:
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           tag_name: ${{ needs.auto_tag.outputs.tag || github.ref_name }}
