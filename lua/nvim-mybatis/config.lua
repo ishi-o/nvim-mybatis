@@ -45,7 +45,7 @@ local DEFAULT_CONFIG = {
 }
 
 --- @type mybatis.NvimMybatisConfig
-M.values = {}
+M.values = vim.deepcopy(DEFAULT_CONFIG)
 
 --- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
