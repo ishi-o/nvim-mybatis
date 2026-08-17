@@ -114,15 +114,18 @@ jobs:
         run: |
           scripts/generate_api_markdown.sh docs/api
 
-      - name: Set up Pandoc for Vimdoc generation
+      - name: Set up Pandoc for API Vimdoc generation
         uses: pandoc/actions/setup@v1
         with:
           version: '3.1.11'
 
+      - name: Set up panvimdoc
+        run: git clone --depth 1 https://github.com/kdheepak/panvimdoc.git "$RUNNER_TEMP/panvimdoc"
+
       - name: Generate API and type Vimdocs from Markdown
-        run: |
-          pandoc --list-output-formats | grep -Fx 'vimdoc'
-          scripts/generate_api_vimdoc.sh docs/api doc
+        env:
+          PANVIMDOC: ${{ runner.temp }}/panvimdoc/panvimdoc.sh
+        run: scripts/generate_api_vimdoc.sh docs/api doc
 
       - name: Verify generated API and type reference
         run: |

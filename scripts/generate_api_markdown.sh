@@ -42,3 +42,7 @@ rm -rf -- "$output_dir"
 mkdir -p "$(dirname "$output_dir")"
 mv "$work_dir/docs" "$output_dir"
 LC_ALL=C find "$output_dir" -type f -name '*.md' -exec perl -0pi -e 's/\n+\z/\n/' {} +
+cat >> "$output_dir/index.md" <<'EOF'
+
+Generated from Lua annotations by [EmmyLua Analyzer Rust](https://github.com/emmyluals/emmylua-analyzer-rust).
+EOF

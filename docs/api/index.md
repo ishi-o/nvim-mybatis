@@ -22,3 +22,5 @@
 - [lua.nvim-mybatis.completion.blink](modules/lua.nvim-mybatis.completion.blink.md)
 - [lua.nvim-mybatis.config](modules/lua.nvim-mybatis.config.md)
 - [lua.nvim-mybatis.navigator](modules/lua.nvim-mybatis.navigator.md)
+
+Generated from Lua annotations by [EmmyLua Analyzer Rust](https://github.com/emmyluals/emmylua-analyzer-rust).
