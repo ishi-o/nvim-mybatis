@@ -41,7 +41,7 @@ runs:
     - name: Cache StyLua
       id: stylua_cache
       if: inputs.stylua == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ~/.cache/nvim-mybatis/stylua
         key: stylua-${{ runner.os }}-${{ steps.stylua_version.outputs.version }}
@@ -77,7 +77,7 @@ runs:
     - name: Cache Neovim
       id: neovim_cache
       if: inputs.neovim == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ~/.cache/nvim-mybatis/neovim
         key: neovim-${{ runner.os }}-${{ steps.neovim_version.outputs.version }}
@@ -104,7 +104,7 @@ runs:
     - name: Cache Tree-sitter CLI
       id: tree_sitter_cache
       if: inputs.tree_sitter == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ~/.cargo/bin/tree-sitter
         key: tree-sitter-cli-${{ runner.os }}-${{ inputs.tree_sitter_version }}
@@ -134,7 +134,7 @@ runs:
     - name: Cache Tree-sitter parsers
       id: parsers_cache
       if: inputs.parsers == 'true'
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ~/.local/share/nvim/site/parser
         key: nvim-treesitter-parsers-${{ runner.os }}-${{ steps.neovim_version.outputs.version }}-${{ inputs.tree_sitter_version }}-${{ hashFiles('tests/deps/nvim-treesitter/**') }}
@@ -153,3 +153,31 @@ runs:
       run: |
         test -f "$HOME/.local/share/nvim/site/parser/java.so"
         test -f "$HOME/.local/share/nvim/site/parser/xml.so"
+
+    - name: Save StyLua cache
+      if: inputs.stylua == 'true' && steps.stylua_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/nvim-mybatis/stylua
+        key: ${{ steps.stylua_cache.outputs.cache-primary-key }}
+
+    - name: Save Neovim cache
+      if: inputs.neovim == 'true' && steps.neovim_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cache/nvim-mybatis/neovim
+        key: ${{ steps.neovim_cache.outputs.cache-primary-key }}
+
+    - name: Save Tree-sitter CLI cache
+      if: inputs.tree_sitter == 'true' && steps.tree_sitter_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.cargo/bin/tree-sitter
+        key: ${{ steps.tree_sitter_cache.outputs.cache-primary-key }}
+
+    - name: Save Tree-sitter parsers cache
+      if: inputs.parsers == 'true' && steps.parsers_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.local/share/nvim/site/parser
+        key: ${{ steps.parsers_cache.outputs.cache-primary-key }}
