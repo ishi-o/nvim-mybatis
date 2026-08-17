@@ -12,8 +12,17 @@ if [[ "$markdown_dir" != "docs/api" || "$vimdoc_dir" != "doc" ]]; then
 	exit 1
 fi
 
-command -v pandoc >/dev/null
-command -v perl >/dev/null
+for command in pandoc perl; do
+	if ! command -v "$command" >/dev/null 2>&1; then
+		echo "generate_api_vimdoc.sh: required command not found: $command" >&2
+		exit 127
+	fi
+done
+
+if ! pandoc --list-output-formats | grep -Fxq 'vimdoc'; then
+	echo "generate_api_vimdoc.sh: installed Pandoc does not support the vimdoc writer" >&2
+	exit 1
+fi
 
 while IFS= read -r -d '' markdown_file; do
 	relative_path="${markdown_file#"$markdown_dir"/}"
