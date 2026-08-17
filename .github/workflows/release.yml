@@ -33,6 +33,7 @@ jobs:
         run: |
           curl -sL https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux-x86_64.zip \
             -o /tmp/stylua.zip
+          mkdir -p "$HOME/.local/bin"
           unzip -j /tmp/stylua.zip -d "$HOME/.local/bin"
 
       - name: Check formatting
@@ -67,14 +68,13 @@ jobs:
         run: |
           mkdir -p tests/deps
           git clone --depth 1 https://github.com/nvim-lua/plenary.nvim tests/deps/plenary.nvim
-          # Pin the legacy branch: the `main` rewrite does not provide `:TSInstallSync`.
-          git clone -b master --depth 1 https://github.com/nvim-treesitter/nvim-treesitter tests/deps/nvim-treesitter
+          git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter tests/deps/nvim-treesitter
 
       - name: Install tree-sitter parsers
         run: |
           nvim --headless -u tests/minimal_init.lua \
-            -c "TSInstallSync java xml" \
-            -c "quit"
+            -c "lua require('nvim-treesitter').install({ 'java', 'xml' }):wait(300000)" \
+            -c "qa!"
           test -f "$HOME/.local/share/nvim/site/parser/java.so"
           test -f "$HOME/.local/share/nvim/site/parser/xml.so"
 
@@ -107,6 +107,7 @@ jobs:
         run: |
           curl -sL https://github.com/JohnnyMorganz/StyLua/releases/latest/download/stylua-linux-x86_64.zip \
             -o /tmp/stylua.zip
+          mkdir -p "$HOME/.local/bin"
           unzip -j /tmp/stylua.zip -d "$HOME/.local/bin"
 
       - name: Apply formatting
