@@ -24,10 +24,8 @@ jobs:
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    outputs:
-      needs_apply: ${{ steps.result.outputs.needs_apply }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up StyLua
         uses: ./.github/actions/setup-env
@@ -35,15 +33,9 @@ jobs:
           stylua: true
 
       - name: Check formatting
-        id: check
         continue-on-error: ${{ github.event_name != 'pull_request' }}
         run: |
           stylua --check lua/ tests/spec/
-
-      - name: Record formatting result
-        id: result
-        if: always()
-        run: echo "needs_apply=${{ steps.check.outcome == 'failure' }}" >> "$GITHUB_OUTPUT"
 
   test:
     name: Test
@@ -54,7 +46,7 @@ jobs:
       needs.style_lint.result != 'skipped'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up test environment
         uses: ./.github/actions/setup-env
@@ -69,25 +61,39 @@ jobs:
           nvim --headless -u tests/minimal_init.lua \
             -c "PlenaryBustedDirectory tests/spec/ {minimal_init = 'tests/minimal_init.lua'}"
 
-  style_apply:
-    name: Apply style
+  create_maintenance_pr:
+    name: Create maintenance PR
     needs: [style_lint, test]
     if: >-
       always() &&
       (
         (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-        github.event_name == 'workflow_dispatch'
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
       ) &&
       needs.style_lint.result == 'success' &&
-      needs.test.result == 'success' &&
-      needs.style_lint.outputs.needs_apply == 'true'
+      needs.test.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     outputs:
-      commit: ${{ steps.apply.outputs.commit }}
+      changed: ${{ steps.changes.outputs.changed }}
+      url: ${{ steps.pull_request.outputs.pull-request-url }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: nvim-mybatis
+
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
 
       - name: Set up StyLua
         uses: ./.github/actions/setup-env
@@ -95,45 +101,7 @@ jobs:
           stylua: true
 
       - name: Apply formatting
-        run: |
-          stylua lua/ tests/spec/
-
-      - name: Commit formatted files
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          branch: ${{ github.ref_name }}
-          commit_message: 'style: apply StyLua formatting'
-          file_pattern: |
-            lua/
-            tests/spec/
-
-      - name: Capture formatted commit
-        id: apply
-        run: |
-          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-  generate_docs:
-    name: Generate Vimdoc
-    needs: [style_lint, test, style_apply]
-    if: >-
-      always() &&
-      (
-        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-        github.event_name == 'workflow_dispatch'
-      ) &&
-      needs.style_lint.result == 'success' &&
-      needs.test.result == 'success' &&
-      (needs.style_apply.result == 'success' || needs.style_apply.result == 'skipped')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      commit: ${{ steps.capture.outputs.commit }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.style_apply.outputs.commit || github.sha }}
-          fetch-depth: 0
+        run: stylua lua/ tests/spec/
 
       - name: Clean doc directory
         run: |
@@ -153,32 +121,62 @@ jobs:
       - name: Generate help tags
         run: nvim --headless -c 'helptags doc/' -c 'quit' 2>/dev/null
 
-      - name: Commit generated documentation
-        uses: stefanzweifel/git-auto-commit-action@v4
+      - name: Check generated changes
+        id: changes
+        run: |
+          if git status --porcelain --untracked-files=all -- lua/ tests/spec/ doc | grep -q .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create or update maintenance PR
+        id: pull_request
+        uses: peter-evans/create-pull-request@v8
         with:
-          branch: ${{ github.ref_name }}
-          commit_message: 'chore(docs): auto-generate vimdoc'
-          file_pattern: |
+          token: ${{ steps.app-token.outputs.token }}
+          branch-token: ${{ steps.app-token.outputs.token }}
+          branch: automation/generated-files
+          base: main
+          delete-branch: true
+          add-paths: |
+            lua/
+            tests/spec/
             doc/*.txt
             doc/tags
+          commit-message: 'chore: update generated files'
+          title: 'chore: update generated files'
+          body: |
+            This pull request was generated by the release workflow.
 
-      - name: Capture generated commit
-        id: capture
-        run: echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+            It applies StyLua formatting and regenerates the Vim documentation.
+          committer: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+          author: 'github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>'
+
+      - name: Enable automatic merge
+        if: steps.pull_request.outputs.pull-request-url != ''
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh pr merge \
+            "${{ steps.pull_request.outputs.pull-request-url }}" \
+            --auto \
+            --squash \
+            --delete-branch
 
   auto_tag:
     name: Auto-tag
-    needs: [style_lint, test, style_apply, generate_docs]
+    needs: [style_lint, test, create_maintenance_pr]
     if: >-
       always() &&
       (
         (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-        github.event_name == 'workflow_dispatch'
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
       ) &&
       needs.style_lint.result == 'success' &&
       needs.test.result == 'success' &&
-      (needs.style_apply.result == 'success' || needs.style_apply.result == 'skipped') &&
-      needs.generate_docs.result == 'success'
+      needs.create_maintenance_pr.result == 'success' &&
+      needs.create_maintenance_pr.outputs.changed == 'false'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -186,8 +184,19 @@ jobs:
       tag: ${{ steps.version.outputs.tag }}
       created: ${{ steps.tag.outputs.created }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
         with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: nvim-mybatis
+
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
           fetch-tags: true
 
@@ -205,8 +214,7 @@ jobs:
         id: tag
         env:
           TAG: ${{ steps.version.outputs.tag }}
-          TARGET_SHA: ${{ needs.generate_docs.outputs.commit || needs.style_apply.outputs.commit }}
-          BRANCH: ${{ github.ref_name }}
+          BRANCH: main
         run: |
           git fetch origin "$BRANCH" --tags
           if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
@@ -214,9 +222,7 @@ jobs:
             echo "created=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if [ -z "$TARGET_SHA" ]; then
-            TARGET_SHA=$(git rev-parse "origin/$BRANCH")
-          fi
+          TARGET_SHA=$(git rev-parse HEAD)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "$TAG" "$TARGET_SHA"
@@ -225,7 +231,7 @@ jobs:
 
   release:
     name: Release
-    needs: [style_lint, test, style_apply, generate_docs, auto_tag]
+    needs: [style_lint, test, create_maintenance_pr, auto_tag]
     if: >-
       always() &&
       (
@@ -236,11 +242,12 @@ jobs:
         (
           (
             (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-            github.event_name == 'workflow_dispatch'
+            (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
           ) &&
           needs.style_lint.result == 'success' &&
           needs.test.result == 'success' &&
-          needs.generate_docs.result == 'success' &&
+          needs.create_maintenance_pr.result == 'success' &&
+          needs.create_maintenance_pr.outputs.changed == 'false' &&
           needs.auto_tag.result == 'success' &&
           needs.auto_tag.outputs.created == 'true'
         )
@@ -250,7 +257,7 @@ jobs:
       contents: write
     steps:
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           generate_release_notes: true
           tag_name: ${{ needs.auto_tag.outputs.tag || github.ref_name }}
