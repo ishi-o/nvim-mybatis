@@ -62,7 +62,13 @@ jobs:
         uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
-          version: stable
+          version: nightly
+
+      - name: Install tree-sitter CLI
+        run: |
+          cargo install --locked tree-sitter-cli --version 0.26.1
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          "$HOME/.cargo/bin/tree-sitter" --version
 
       - name: Clone test dependencies
         run: |
