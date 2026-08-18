@@ -1,0 +1,61 @@
+name: Generate Vimdocs
+description: Generate multiple Vimdocs from Markdown with panvimdoc
+
+inputs:
+  markdown_dir:
+    description: Documentation directory to search recursively for Markdown files, excluding Chinese localizations
+    required: false
+    default: docs
+  vimdoc_prefix:
+    description: Prefix used for generated Vimdoc names
+    required: false
+    default: nvim-mybatis
+  api_dir:
+    description: Markdown directory relative to markdown_dir whose files use the API Vimdoc prefix
+    required: false
+    default: api
+  panvimdoc_ref:
+    description: panvimdoc ref to use for generation
+    required: false
+    default: v4.0.1
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Vimdoc tools
+      uses: ./.github/actions/setup-env
+      with:
+        pandoc: true
+        panvimdoc: true
+        panvimdoc_ref: ${{ inputs.panvimdoc_ref }}
+
+    - name: Generate Vimdocs
+      shell: bash
+      env:
+        API_DIR: ${{ inputs.api_dir }}
+        MARKDOWN_DIR: ${{ inputs.markdown_dir }}
+        VIMDOC_PREFIX: ${{ inputs.vimdoc_prefix }}
+      run: |
+        panvimdoc_dir="$HOME/.cache/nvim-mybatis/panvimdoc"
+
+        while IFS= read -r -d '' pandoc_file; do
+          relative_path="${pandoc_file#"$MARKDOWN_DIR"/}"
+          stem="${relative_path%.md}"
+          if [[ "$relative_path" == "$API_DIR/index.md" ]]; then
+            vimdoc="$VIMDOC_PREFIX-api"
+          elif [[ "$relative_path" == "$API_DIR/"*.md ]]; then
+            api_stem="${relative_path#"$API_DIR"/}"
+            api_stem="${api_stem%.md}"
+            vimdoc="$VIMDOC_PREFIX-api-${api_stem//\//-}"
+          else
+            vimdoc="$VIMDOC_PREFIX-${stem//\//-}"
+          fi
+
+          "$panvimdoc_dir/panvimdoc.sh" \
+            --project-name "$vimdoc" \
+            --input-file "$pandoc_file" \
+            --vim-version 'NVIM v0.8.0'
+        done < <(
+          find "$MARKDOWN_DIR" \( -type f -o -type l \) \
+            -name '*.md' ! -name '*_zh_CN.md' -print0 | sort -z
+        )

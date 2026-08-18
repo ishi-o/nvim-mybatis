@@ -12,6 +12,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source_root="$work_dir/source"
 # Keep generated pages limited to the plugin entry point, user-facing
 # integrations, important navigation/generation APIs, and public types.
+# Every other Lua file is intentionally ignored by this generator.
 api_sources=(
 	"lua/nvim-mybatis/init.lua"
 	"lua/nvim-mybatis/config.lua"
@@ -42,3 +43,7 @@ rm -rf -- "$output_dir"
 mkdir -p "$(dirname "$output_dir")"
 mv "$work_dir/docs" "$output_dir"
 LC_ALL=C find "$output_dir" -type f -name '*.md' -exec perl -0pi -e 's/\n+\z/\n/' {} +
+cat >> "$output_dir/index.md" <<'EOF'
+
+Generated from Lua annotations by [EmmyLua Analyzer Rust](https://github.com/emmyluals/emmylua-analyzer-rust).
+EOF
