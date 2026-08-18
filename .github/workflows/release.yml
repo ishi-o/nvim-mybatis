@@ -133,10 +133,11 @@ jobs:
         with:
           token: ${{ github.token }}
           branch-token: ${{ github.token }}
-          # Keep one stable branch so an existing maintenance PR is updated.
+          # Reuse this branch for an active PR; remove it after the PR is merged
+          # and the next run has no remaining diff, allowing a new PR later.
           branch: automation/generated-files
           base: main
-          delete-branch: false
+          delete-branch: true
           add-paths: |
             lua/
             tests/spec/
