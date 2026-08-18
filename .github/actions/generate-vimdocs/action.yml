@@ -54,6 +54,7 @@ runs:
           "$panvimdoc_dir/panvimdoc.sh" \
             --project-name "$vimdoc" \
             --input-file "$pandoc_file" \
+            --scripts-dir "$panvimdoc_dir/scripts" \
             --vim-version 'NVIM v0.8.0'
         done < <(
           find "$MARKDOWN_DIR" \( -type f -o -type l \) \
