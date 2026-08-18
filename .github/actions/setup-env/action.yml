@@ -14,6 +14,22 @@ inputs:
     description: EmmyLua documentation generator version
     required: false
     default: "0.25.1"
+  pandoc:
+    description: Install Pandoc
+    required: false
+    default: "false"
+  pandoc_version:
+    description: Pandoc version to install
+    required: false
+    default: "3.1.11"
+  panvimdoc:
+    description: Install and cache panvimdoc
+    required: false
+    default: "false"
+  panvimdoc_ref:
+    description: panvimdoc ref to install
+    required: false
+    default: "v4.0.1"
   neovim:
     description: Install the latest stable Neovim
     required: false
@@ -38,6 +54,32 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Set up Pandoc
+      if: inputs.pandoc == 'true'
+      uses: pandoc/actions/setup@v1
+      with:
+        version: ${{ inputs.pandoc_version }}
+
+    - name: Cache panvimdoc
+      id: panvimdoc_cache
+      if: inputs.panvimdoc == 'true'
+      uses: actions/cache/restore@v5
+      with:
+        path: ~/.cache/nvim-mybatis/panvimdoc
+        key: panvimdoc-${{ runner.os }}-${{ inputs.panvimdoc_ref }}
+
+    - name: Install panvimdoc
+      if: inputs.panvimdoc == 'true' && steps.panvimdoc_cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        PANVIMDOC_REF: ${{ inputs.panvimdoc_ref }}
+      run: |
+        panvimdoc_dir="$HOME/.cache/nvim-mybatis/panvimdoc"
+        mkdir -p "$(dirname "$panvimdoc_dir")"
+        git clone --depth 1 --branch "$PANVIMDOC_REF" \
+          https://github.com/kdheepak/panvimdoc.git \
+          "$panvimdoc_dir"
+
     - name: Resolve StyLua version
       id: stylua_version
       if: inputs.stylua == 'true'
@@ -210,6 +252,13 @@ runs:
       with:
         path: ~/.cache/nvim-mybatis/stylua
         key: ${{ steps.stylua_cache.outputs.cache-primary-key }}
+
+    - name: Save panvimdoc cache
+      if: inputs.panvimdoc == 'true' && steps.panvimdoc_cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        path: ~/.cache/nvim-mybatis/panvimdoc
+        key: ${{ steps.panvimdoc_cache.outputs.cache-primary-key }}
 
     - name: Save EmmyLua documentation generator cache
       if: inputs.emmylua_doc == 'true' && steps.emmylua_doc_cache.outputs.cache-hit != 'true'
