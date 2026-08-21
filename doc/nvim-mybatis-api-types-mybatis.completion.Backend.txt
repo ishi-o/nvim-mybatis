@@ -1,4 +1,4 @@
-*nvim-mybatis-api-types-mybatis.completion.Backend.txt*For NVIM v0.8.0Last change: 2026 August 18
+*nvim-mybatis-api-types-mybatis.completion.Backend.txt*For NVIM v0.8.0Last change: 2026 August 21
 
 ==============================================================================
 Table of Contents*nvim-mybatis-api-types-mybatis.completion.Backend-table-of-contents*
@@ -6,11 +6,8 @@ Table of Contents*nvim-mybatis-api-types-mybatis.completion.Backend-table-of-con
 1. class Backend|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend|
   - ## methods|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-##-methods|
   - ### Backend.get_completion_items|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.get_completion_items|
-  - ### Backend.refresh|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.refresh|
   - ### Backend.is_available|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.is_available|
-  - ### Backend.on_change|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.on_change|
   - ## fields|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-##-fields|
-  - ### Backend.name|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.name|
   - ### Backend.get_completion_items_sync|nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.get_completion_items_sync|
 
 ==============================================================================
@@ -40,13 +37,6 @@ Table of Contents*nvim-mybatis-api-types-mybatis.completion.Backend-table-of-con
 <
 
 
-### BACKEND.REFRESH*nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.refresh*
-
->lua
-    function Backend.refresh()-> nil
-<
-
-
 ### BACKEND.IS_AVAILABLE*nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.is_available*
 
 >lua
@@ -54,21 +44,7 @@ Table of Contents*nvim-mybatis-api-types-mybatis.completion.Backend-table-of-con
 <
 
 
-### BACKEND.ON_CHANGE*nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.on_change*
-
->lua
-    function Backend.on_change(calback: fun())-> nil
-<
-
-
 ## FIELDS*nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-##-fields*
-
-
-### BACKEND.NAME*nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.name*
-
->lua
-    Backend.name : mybatis.completion.Provider
-<
 
 
 ### BACKEND.GET_COMPLETION_ITEMS_SYNC*nvim-mybatis-api-types-mybatis.completion.Backend-class-backend-###-backend.get_completion_items_sync*

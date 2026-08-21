@@ -1,4 +1,4 @@
-*nvim-mybatis-api.txt*       For NVIM v0.8.0       Last change: 2026 August 18
+*nvim-mybatis-api.txt*       For NVIM v0.8.0       Last change: 2026 August 21
 
 ==============================================================================
 Table of Contents                         *nvim-mybatis-api-table-of-contents*
@@ -20,6 +20,7 @@ TYPES                                           *nvim-mybatis-api-index-types*
 - class Backend <types/mybatis.completion.Backend.md>
 - class Context <types/mybatis.completion.Context.md>
 - class CrudTagArgs <types/mybatis.action.CrudTagArgs.md>
+- class IndexBackend <types/mybatis.completion.IndexBackend.md>
 - class NvimMybatisConfig <types/mybatis.NvimMybatisConfig.md>
 - class Query <types/mybatis.treesitter.Query.md>
 
