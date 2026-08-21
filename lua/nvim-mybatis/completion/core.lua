@@ -10,10 +10,15 @@ local query = require("nvim-mybatis.treesitter.query")
 local scan = require("nvim-mybatis.treesitter.scan")
 local logger = require("nvim-mybatis.logger")
 
+---@type mybatis.completion.IndexBackend
+local index_backend = require("nvim-mybatis.completion.backend.index")
+---@type mybatis.completion.Backend
+local jdtls_backend = require("nvim-mybatis.completion.backend.jdtls")
+
 --- @type table<mybatis.completion.Provider, mybatis.completion.Backend>
 local backend = {
-	index = require("nvim-mybatis.completion.backend.index"),
-	jdtls = require("nvim-mybatis.completion.backend.jdtls"),
+	index = index_backend,
+	jdtls = jdtls_backend,
 }
 
 --- @type table<mybatis.completion.ContextKind, lsp.CompletionItemKind>
@@ -85,18 +90,17 @@ end
 --- @param classname string
 --- @return string? file
 local function find_java_file(classname)
-	local root = utils.get_module_root()
-	if not root then
-		return nil
-	end
 	local filepath = classname:gsub("%.", "/") .. ".java"
-	for _, classpath in ipairs(config.classpaths.java) do
-		local full = root .. "/" .. classpath .. "/" .. filepath
+	local result
+	utils.foreach_classpath(function(classpath)
+		local full = classpath .. filepath
 		if vim.fn.filereadable(full) == 1 then
-			return full
+			result = full
+			return true
 		end
-	end
-	return nil
+		return false
+	end, config.classpaths.java)
+	return result
 end
 
 --- load a java file into a hidden buffer for treesitter parsing
@@ -163,7 +167,7 @@ local function complete_field(ctx, partial, callback)
 	end
 	if not classname:find(".", 1, true) then
 		-- simple name: resolve through the class index
-		classname = backend.index.resolve(classname)
+		classname = index_backend.resolve(classname)
 		if not classname then
 			callback({})
 			return

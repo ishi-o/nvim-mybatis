@@ -42,40 +42,10 @@ function Backend.get_completion_items(
 
 
 
-### Backend.refresh
----
-```lua
-function Backend.refresh()-> nil
-```
-
-
-
-
-
-
-
-
-
-
 ### Backend.is_available
 ---
 ```lua
 function Backend.is_available()-> boolean
-```
-
-
-
-
-
-
-
-
-
-
-### Backend.on_change
----
-```lua
-function Backend.on_change(calback: fun())-> nil
 ```
 
 
@@ -92,21 +62,6 @@ function Backend.on_change(calback: fun())-> nil
 
 ## fields
 ---
-
-### Backend.name
----
-```lua
-Backend.name : mybatis.completion.Provider
-```
-
-
-
-
-
-
-
-
-
 
 ### Backend.get_completion_items_sync
 ---

@@ -79,6 +79,24 @@ require("blink.cmp").setup({
 
 Pass configuration through the plugin's `opts` table. See `:help nvim-mybatis-api` for the available options and defaults.
 
+### Default configuration
+
+```lua
+{
+	autocmd = true,
+	xml_search_pattern = { "**/*Mapper*.xml" },
+	xml_search_tool = "default",
+	completion_provider = "default",
+	mapper_name_pattern = { "[Mm]apper" },
+	classpaths = {
+		java = { "src/main/java" },
+		xml = { "src/main/resources" },
+	},
+	root_file = { "pom.xml", "build.gradle", "build.gradle.kts" },
+	debug = false,
+}
+```
+
 ## ⌨️ Commands
 
 After calling `require("nvim-mybatis").setup()`, the following commands are available:

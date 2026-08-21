@@ -34,6 +34,23 @@ function M.is_mybatis_xml(bufnr)
 	return vim.bo[bufnr].filetype == "xml" and M.is_mybatis_file(bufnr)
 end
 
+local function parent_dir(dir)
+	local parent = vim.fn.fnamemodify(dir, ":h")
+	if parent == "" or parent == dir then
+		return nil
+	end
+	return parent
+end
+
+local function has_root_file(dir)
+	for _, filename in ipairs(config.root_file) do
+		if vim.fn.filereadable(dir .. "/" .. filename) == 1 then
+			return true
+		end
+	end
+	return false
+end
+
 --- get project / module root dir
 --- @return string?
 function M.get_module_root()
@@ -44,6 +61,24 @@ function M.get_module_root()
 		end
 	end
 	return nil
+end
+
+--- get the outermost project root containing the current module
+--- @return string?
+function M.get_project_root()
+	local module_root = M.get_module_root()
+	if not module_root then
+		return nil
+	end
+	local project_root = module_root
+	local dir = parent_dir(module_root)
+	while dir do
+		if has_root_file(dir) then
+			project_root = dir
+		end
+		dir = parent_dir(dir)
+	end
+	return project_root
 end
 
 --- get java builtin types
@@ -124,7 +159,7 @@ end
 --- @param classpaths string[]
 --- @return boolean
 function M.foreach_classpath(func, classpaths)
-	local project_root = M.get_module_root()
+	local project_root = M.get_project_root()
 	if not project_root then
 		logger.warn(
 			"Module root not found (missing root file: "
@@ -134,8 +169,16 @@ function M.foreach_classpath(func, classpaths)
 		return false
 	end
 	for _, classpath in ipairs(classpaths) do
-		if func(project_root .. "/" .. classpath .. "/") then
-			return true
+		local relative_classpath = classpath:gsub("/$", "")
+		local paths = vim.fn.glob(project_root .. "/**/" .. relative_classpath, false, true)
+		local direct_path = project_root .. "/" .. relative_classpath
+		if #paths == 0 then
+			paths = { direct_path }
+		end
+		for _, path in ipairs(paths) do
+			if func(path .. "/") then
+				return true
+			end
 		end
 	end
 	return false
