@@ -20,12 +20,13 @@
 --- | "default"
 
 --- @class mybatis.completion.Backend
---- @field name mybatis.completion.Provider
 --- @field get_completion_items fun(partial: string, ctx: mybatis.completion.Context, callback: fun(items: lsp.CompletionItem[])): nil
 --- @field get_completion_items_sync? fun(partial: string, ctx: mybatis.completion.Context): lsp.CompletionItem[]
---- @field refresh fun(): nil
 --- @field is_available fun():boolean
---- @field on_change fun(calback: fun()): nil
+
+--- @class mybatis.completion.IndexBackend: mybatis.completion.Backend
+--- @field resolve fun(simple_name: string): string?
+--- @field refresh fun(): nil
 
 --- @class mybatis.treesitter.Query
 --- @field lang string

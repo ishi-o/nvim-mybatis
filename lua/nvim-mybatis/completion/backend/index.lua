@@ -2,15 +2,13 @@
 --- Filesystem class index: scans the configured java classpaths and caches the
 --- result (mpack) next to a signature of the scanned directory tree so edits
 --- and additions invalidate the cache.
---- @type mybatis.completion.Backend
+--- @type mybatis.completion.IndexBackend
 local M = {}
 
 local uv = vim.uv or vim.loop
 local utils = require("nvim-mybatis.utils")
 local logger = require("nvim-mybatis.logger")
 local config = require("nvim-mybatis.config"):get()
-
-M.name = "index"
 
 local cache_dir = nil
 local class_index_cache = nil
@@ -32,7 +30,7 @@ local function cache_file()
 	if vim.fn.isdirectory(dir) == 0 then
 		vim.fn.mkdir(dir, "p")
 	end
-	local root = utils.get_module_root() or "no-root"
+	local root = utils.get_project_root() or utils.get_module_root() or "no-root"
 	return dir .. "/class-index-" .. vim.fn.sha256(root):sub(1, 16) .. ".mpack"
 end
 
@@ -68,21 +66,22 @@ local function signature_walk(dir, parts)
 	end
 end
 
---- @return string? signature nil when the module root cannot be resolved
+--- @return string? signature nil when the project root cannot be resolved
 local function current_signature()
-	local root = utils.get_module_root()
+	local root = utils.get_project_root()
 	if not root then
 		return nil
 	end
 	local parts = {}
-	for _, classpath in ipairs(config.classpaths.java) do
-		local full = root .. "/" .. classpath
+	utils.foreach_classpath(function(classpath)
+		local full = classpath:gsub("/$", "")
 		local stat = uv.fs_stat(full)
-		parts[#parts + 1] = classpath .. "=" .. (stat and stat.mtime.sec or "-")
+		parts[#parts + 1] = full .. "=" .. (stat and stat.mtime.sec or "-")
 		if stat then
 			signature_walk(full, parts)
 		end
-	end
+		return false
+	end, config.classpaths.java)
 	return table.concat(parts, "|")
 end
 
@@ -205,7 +204,5 @@ end
 function M.is_available()
 	return true
 end
-
-function M.on_change() end
 
 return M

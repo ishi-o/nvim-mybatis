@@ -41,9 +41,6 @@ M.values = vim.deepcopy(DEFAULT_CONFIG)
 --- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
 	local overrides = vim.deepcopy(config or {})
-	-- These lists are parser constants, not configuration options.
-	overrides.type_attributes = nil
-	overrides.crud_tags = nil
 	local values = vim.tbl_deep_extend("force", vim.deepcopy(DEFAULT_CONFIG), overrides)
 	-- Keep the table identity stable because other modules retain this reference.
 	for key in pairs(M.values) do

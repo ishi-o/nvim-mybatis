@@ -10,6 +10,7 @@
 - [class Backend](types/mybatis.completion.Backend.md)
 - [class Context](types/mybatis.completion.Context.md)
 - [class CrudTagArgs](types/mybatis.action.CrudTagArgs.md)
+- [class IndexBackend](types/mybatis.completion.IndexBackend.md)
 - [class NvimMybatisConfig](types/mybatis.NvimMybatisConfig.md)
 - [class Query](types/mybatis.treesitter.Query.md)
 

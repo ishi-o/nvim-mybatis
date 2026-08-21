@@ -3,11 +3,9 @@
 --- @type mybatis.completion.Backend
 local M = {}
 
-M.name = "jdtls"
-
 local SYNC_TIMEOUT_MS = 300
 
---- @return lsp.Client? client
+--- @return vim.lsp.Client? client
 local function client()
 	return vim.lsp.get_clients({ name = "jdtls" })[1]
 end
@@ -74,12 +72,8 @@ function M.get_completion_items_sync(partial, ctx)
 	return build_items(response.result)
 end
 
-function M.refresh() end
-
 function M.is_available()
 	return client() ~= nil
 end
-
-function M.on_change() end
 
 return M
