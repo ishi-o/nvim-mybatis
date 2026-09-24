@@ -3,7 +3,7 @@ local context = require("nvim-mybatis.completion.context")
 local core = require("nvim-mybatis.completion.core")
 local index = require("nvim-mybatis.completion.backend.index")
 
-local XML = "project/src/main/resources/mapper/UserMapper.xml"
+local MYBATIS = "project/src/main/resources/mapper/UserMapper.xml"
 
 --- run core.complete synchronously (all fixture sources invoke the callback
 --- synchronously) and collect the labels
@@ -37,7 +37,7 @@ describe("completion.core", function()
 		local dir = vim.fn.tempname()
 		vim.fn.mkdir(dir, "p")
 		index.set_cache_dir(dir)
-		helpers.load_buf(XML, "xml")
+		helpers.load_buf(MYBATIS, "mybatis")
 	end)
 
 	after_each(function()
@@ -133,7 +133,7 @@ describe("completion.omnifunc", function()
 		local dir = vim.fn.tempname()
 		vim.fn.mkdir(dir, "p")
 		index.set_cache_dir(dir)
-		helpers.load_buf(XML, "xml")
+		helpers.load_buf(MYBATIS, "mybatis")
 	end)
 
 	after_each(function()

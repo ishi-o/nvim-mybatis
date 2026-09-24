@@ -6,6 +6,7 @@ local M = {}
 --- Configure nvim-mybatis.
 --- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
+	require("nvim-mybatis.treesitter.install").setup()
 	if require("nvim-mybatis.config").setup(config):get().autocmd then
 		require("nvim-mybatis.autocmd").setup()
 	end

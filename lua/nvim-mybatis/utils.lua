@@ -26,12 +26,19 @@ function M.is_mybatis_java(bufnr)
 	return vim.bo[bufnr].filetype == "java" and M.is_mybatis_file(bufnr)
 end
 
---- check if the file is xml and mybatis file
+--- check if the buffer uses the MyBatis filetype
+--- @param bufnr? integer
+--- @return boolean
+function M.is_mybatis_mapper(bufnr)
+	bufnr = bufnr or vim.api.nvim_get_current_buf()
+	return vim.bo[bufnr].filetype == "mybatis"
+end
+
+--- Backwards-compatible alias for callers that used the old XML name.
 --- @param bufnr? integer
 --- @return boolean
 function M.is_mybatis_xml(bufnr)
-	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	return vim.bo[bufnr].filetype == "xml" and M.is_mybatis_file(bufnr)
+	return M.is_mybatis_mapper(bufnr)
 end
 
 local function parent_dir(dir)
@@ -184,61 +191,54 @@ function M.foreach_classpath(func, classpaths)
 	return false
 end
 
---- @type mybatis.utils.SearchToolHandler
-local function search_mapper_fallback_rg(namespace_pattern, mapper_dir)
-	local glob_args = {}
-	for _, glob_pattern in ipairs(config.xml_search_pattern) do
-		table.insert(glob_args, string.format('--glob="%s"', glob_pattern))
+local function search_mapper_with_grep(namespace_pattern, mapper_dir)
+	local files = {}
+	local seen = {}
+	local patterns = #config.xml_search_pattern > 0 and config.xml_search_pattern or { "**/*.xml" }
+	for _, pattern in ipairs(patterns) do
+		for _, file in ipairs(vim.fn.globpath(mapper_dir, pattern, false, true)) do
+			file = vim.fs.normalize(file)
+			if not seen[file] then
+				seen[file] = true
+				table.insert(files, file)
+			end
+		end
 	end
-	if #glob_args == 0 then
-		table.insert(glob_args, '--glob="*.xml"')
+	if #files == 0 then
+		return nil
 	end
 
-	local glob_str = table.concat(glob_args, " ")
-
-	local cmd = string.format(
-		"rg -l --color=never --fixed-strings %s '%s' '%s'",
-		glob_str,
-		namespace_pattern,
-		mapper_dir
-	)
-	local result = vim.fn.system(cmd)
-	if vim.v.shell_error == 0 then
-		return result:match("[^\r\n]+")
+	local args = { namespace_pattern }
+	vim.list_extend(args, files)
+	if vim.o.grepprg ~= "internal" then
+		for index, arg in ipairs(args) do
+			args[index] = vim.fn.shellescape(arg)
+		end
 	end
-	return nil
-end
-
---- @type mybatis.utils.SearchToolHandler
-local function search_mapper_fallback_ag(namespace_pattern, mapper_dir)
-	local glob_args = {}
-	for _, glob_pattern in ipairs(config.xml_search_pattern) do
-		table.insert(glob_args, string.format("-G '%s'", glob_pattern))
-	end
-	if #glob_args == 0 then
-		table.insert(glob_args, "-G '*.xml'")
-	end
-	local glob_str = table.concat(glob_args, " ")
-
-	local cmd = string.format("ag -l %s '%s' '%s'", glob_str, namespace_pattern, mapper_dir)
-	local result = vim.fn.system(cmd)
-	if vim.v.shell_error == 0 then
-		return result:match("[^\r\n]+")
-	end
-	return nil
-end
-
---- @type mybatis.utils.SearchToolHandler
-local function search_mapper_fallback_grep(namespace_pattern, mapper_dir)
-	vim.fn.grep({
-		args = { "-r", "-l", "--include=*.xml", vim.pesc(namespace_pattern), mapper_dir },
+	local ok = pcall(vim.cmd, {
+		cmd = "grep",
+		bang = true,
+		mods = { silent = true },
+		args = args,
 	})
-
-	local qf = vim.fn.getqflist()
-	if qf and #qf > 0 then
-		return qf[1].filename
+	if not ok then
+		return nil
 	end
 
+	for _, item in ipairs(vim.fn.getqflist()) do
+		local filename = item.filename
+		if
+			(not filename or filename == "")
+			and item.bufnr
+			and item.bufnr > 0
+			and vim.api.nvim_buf_is_valid(item.bufnr)
+		then
+			filename = vim.api.nvim_buf_get_name(item.bufnr)
+		end
+		if filename and filename ~= "" then
+			return vim.fs.normalize(filename)
+		end
+	end
 	return nil
 end
 
@@ -248,27 +248,9 @@ end
 function M.search_mapper(namespace)
 	local namespace_pattern = string.format('namespace="%s"', namespace)
 	local result = nil
-	--- @type table<mybatis.utils.SearchTool, mybatis.utils.SearchToolHandler>
-	local tools = {
-		rg = search_mapper_fallback_rg,
-		ag = search_mapper_fallback_ag,
-		grep = search_mapper_fallback_grep,
-	}
-	--- @type mybatis.utils.SearchTool[]
-	local tool_order = { "rg", "ag", "grep" }
 	M.foreach_classpath(function(classpath)
-		if config.xml_search_tool ~= "default" then
-			return tools[config.xml_search_tool](namespace_pattern, classpath)
-		end
-		for _, name in ipairs(tool_order) do
-			if name == "grep" or vim.fn.executable(name) ~= 0 then
-				result = tools[name](namespace_pattern, classpath)
-				if result then
-					return true
-				end
-			end
-		end
-		return false
+		result = search_mapper_with_grep(namespace_pattern, classpath)
+		return result ~= nil
 	end, config.classpaths.xml)
 	if result == nil then
 		logger.warn("No XML file found for mapper: " .. namespace)

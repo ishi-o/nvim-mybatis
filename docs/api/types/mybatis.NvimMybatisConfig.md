@@ -53,23 +53,6 @@ Patterns to search for XML files
 
 
 
-### NvimMybatisConfig.xml_search_tool
----
-```lua
-NvimMybatisConfig.xml_search_tool : mybatis.utils.SearchTool?
-```
-
-
-
-Tool to search XML files, "default": try all tools in order "rg", "ag", "grep"
-
-
-
-
-
-
-
-
 ### NvimMybatisConfig.completion_provider
 ---
 ```lua
@@ -78,7 +61,7 @@ NvimMybatisConfig.completion_provider : mybatis.completion.Provider?
 
 
 
-XML Completion provider, "default": try all providers in order "index", "jdtls"
+Mapper completion provider, "default": try all providers in order "index", "jdtls"
 
 
 
@@ -95,7 +78,7 @@ NvimMybatisConfig.mapper_name_pattern : string[]?
 
 
 
-Lua string.match patterns to identify Mapper XML files. Plugin navigation is only enabled when an opened XML filename matches these patterns
+Lua string.match patterns to identify Mapper files. Mapper-file autocmds only apply when the filename matches these patterns
 
 
 

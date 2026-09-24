@@ -7,6 +7,45 @@ local logger = require("nvim-mybatis.logger")
 local TYPE_ATTRIBUTES = constants.TYPE_ATTRIBUTES
 local CRUD_TAGS = constants.CRUD_TAGS
 
+local function attribute_value(attribute, bufnr, name)
+	if not attribute then
+		return nil
+	end
+	local name_node = attribute:named_child(0)
+	if not name_node or ts.get_node_text(name_node, bufnr) ~= name then
+		return nil
+	end
+	local value_node = attribute:named_child(1)
+	return value_node and ts.get_node_text(value_node, bufnr):gsub("['\"]", "") or nil
+end
+
+local function find_attribute(tag, bufnr, name)
+	if not tag then
+		return nil
+	end
+	for i = 0, tag:named_child_count() - 1 do
+		local child = tag:named_child(i)
+		if child and child:type() == "Attribute" and attribute_value(child, bufnr, name) then
+			return child
+		end
+	end
+	return nil
+end
+
+local function find_tag(node, bufnr)
+	local current = node
+	while current do
+		if current:type() ~= "Attribute" then
+			local name_node = current:named_child(0)
+			if name_node and name_node:type() == "Name" then
+				return current, ts.get_node_text(name_node, bufnr)
+			end
+		end
+		current = current:parent()
+	end
+	return nil, nil
+end
+
 --- extract class name
 --- @param node TSNode
 --- @param bufnr integer
@@ -44,27 +83,14 @@ function M.crud_id(node, bufnr)
 	if not current then
 		return nil
 	end
-	local name = current:named_child(0)
-	if not name or ts.get_node_text(name, bufnr) ~= "id" then
+	local id_value = attribute_value(current, bufnr, "id")
+	if not id_value then
 		return nil
 	end
-	local value = current:named_child(1)
-	if not value then
+	local _, tag = find_tag(current, bufnr)
+	if not tag then
 		return nil
 	end
-	local id_value = ts.get_node_text(value, bufnr):gsub("['\"]", "")
-	local stag = current
-	while stag and stag:type() ~= "STag" do
-		stag = stag:parent()
-	end
-	if not stag then
-		return nil
-	end
-	local tag_name = stag:named_child(0)
-	if not tag_name then
-		return nil
-	end
-	local tag = ts.get_node_text(tag_name, bufnr)
 	if vim.tbl_contains(CRUD_TAGS, tag) then
 		return id_value
 	end
@@ -78,35 +104,18 @@ end
 function M.belong_namespace(node, bufnr)
 	local current = node
 	while current do
-		if current:type() == "element" then
+		if current:type() == "Mapper" or current:type() == "SqlMap" then
 			local start_tag = current:named_child(0)
-			if start_tag then
-				local name_node = start_tag:named_child(0)
-				if name_node and ts.get_node_text(name_node, bufnr) == "mapper" then
-					--- @type TSNode[]
-					local attrs = {}
-					for i = 0, start_tag:named_child_count() - 1 do
-						local child = start_tag:named_child(i)
-						if child:type() == "Attribute" then
-							table.insert(attrs, child)
-						end
-					end
-					for _, attr in ipairs(attrs or {}) do
-						local attr_name_node = attr:named_child(0)
-						if
-							attr_name_node
-							and ts.get_node_text(attr_name_node, bufnr) == "namespace"
-						then
-							local value_node = attr:named_child(1)
-							if value_node then
-								local text = ts.get_node_text(value_node, bufnr):gsub("['\"]", "")
-								return text
-							end
-						end
-					end
-					return nil
-				end
+			local namespace = start_tag and find_attribute(start_tag, bufnr, "namespace")
+			if namespace then
+				return attribute_value(namespace, bufnr, "namespace")
 			end
+			return nil
+		end
+
+		local tag_node, tag_name = find_tag(current, bufnr)
+		if tag_name == "mapper" or tag_name == "sqlMap" then
+			return attribute_value(find_attribute(tag_node, bufnr, "namespace"), bufnr, "namespace")
 		end
 		current = current:parent()
 	end

@@ -5,8 +5,10 @@ vim.opt.shadafile = "NONE"
 vim.opt.shada = ""
 
 vim.opt.runtimepath:prepend(root .. "/lua")
+package.path = root .. "/lua/?.lua;" .. root .. "/lua/?/init.lua;" .. package.path
 -- spec helpers live in tests/lua/spec/helpers.lua (require("spec.helpers"))
 vim.opt.runtimepath:prepend(root .. "/tests")
+package.path = root .. "/tests/lua/?.lua;" .. root .. "/tests/lua/?/init.lua;" .. package.path
 -- tree-sitter parsers installed by nvim-treesitter
 vim.opt.runtimepath:append(vim.fn.stdpath("data") .. "/site")
 
@@ -30,3 +32,4 @@ end
 
 assert(prepend_dep("plenary.nvim"), "plenary.nvim not found; clone it into tests/deps/")
 prepend_dep("nvim-treesitter")
+require("nvim-mybatis.treesitter.install").setup()

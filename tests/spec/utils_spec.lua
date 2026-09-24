@@ -7,7 +7,8 @@ describe("utils", function()
 	end)
 
 	it("is_mybatis_file matches mapper name patterns", function()
-		local bufnr = helpers.load_buf("project/src/main/resources/mapper/UserMapper.xml", "xml")
+		local bufnr =
+			helpers.load_buf("project/src/main/resources/mapper/UserMapper.xml", "mybatis")
 		assert.is_true(utils.is_mybatis_file(bufnr))
 	end)
 
@@ -34,5 +35,17 @@ describe("utils", function()
 			""
 		)
 		assert.same({}, classes)
+	end)
+
+	it("search_mapper uses Neovim's grep backend", function()
+		helpers.cd_project()
+		local grepprg = vim.o.grepprg
+		vim.o.grepprg = "internal"
+		local ok, file = pcall(utils.search_mapper, "com.example.mapper.UserMapper")
+		vim.o.grepprg = grepprg
+		vim.cmd("cd -")
+
+		assert.is_true(ok)
+		assert.equals(helpers.fixture("project/src/main/resources/mapper/UserMapper.xml"), file)
 	end)
 end)

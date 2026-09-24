@@ -13,7 +13,7 @@ M.java = require("nvim-mybatis.navigator.java")
 --- @return boolean navigated whether a MyBatis target was found
 function M.jump(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	if utils.is_mybatis_xml(bufnr) then
+	if utils.is_mybatis_mapper(bufnr) then
 		return M.xml.navigate_from_xml(bufnr)
 	end
 	if utils.is_mybatis_java(bufnr) then

@@ -9,7 +9,6 @@ local DEFAULT_CONFIG = {
 	xml_search_pattern = {
 		"**/*Mapper*.xml",
 	},
-	xml_search_tool = "default",
 	completion_provider = "default",
 	mapper_name_pattern = {
 		"[Mm]apper",
@@ -17,9 +16,11 @@ local DEFAULT_CONFIG = {
 	classpaths = {
 		java = {
 			"src/main/java",
+			"src/test/java",
 		},
 		xml = {
 			"src/main/resources",
+			"src/test/resources",
 		},
 	},
 	root_file = {
@@ -34,10 +35,10 @@ local DEFAULT_CONFIG = {
 M.values = vim.deepcopy(DEFAULT_CONFIG)
 
 --- Defaults: `autocmd = true`, `xml_search_pattern = { "**/*Mapper*.xml" }`,
---- `xml_search_tool = "default"`, `completion_provider = "default"`,
---- `mapper_name_pattern = { "[Mm]apper" }`, Java/XML classpaths of
---- `src/main/java` and `src/main/resources`, Maven/Gradle root files, and
---- `debug = false`.
+--- `completion_provider = "default"`, `mapper_name_pattern = { "[Mm]apper" }`,
+--- Java/mapper classpaths of `src/main/java`, `src/test/java`,
+--- `src/main/resources`, and `src/test/resources`, Maven/Gradle root files,
+--- and `debug = false`.
 --- @param config mybatis.NvimMybatisConfig?
 function M.setup(config)
 	local overrides = vim.deepcopy(config or {})

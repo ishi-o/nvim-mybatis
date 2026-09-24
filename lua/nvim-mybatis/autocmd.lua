@@ -5,6 +5,7 @@ local map = vim.keymap.set
 local utils = require("nvim-mybatis.utils")
 local navigator = require("nvim-mybatis.navigator")
 local logger = require("nvim-mybatis.logger")
+local treesitter_install = require("nvim-mybatis.treesitter.install")
 
 local function jump(bufnr)
 	if not navigator.jump(bufnr) then
@@ -14,26 +15,38 @@ end
 
 --- Register MyBatis filetype autocmds and buffer-local `gd` mappings.
 function M.setup()
-	local group = vim.api.nvim_create_augroup("MyBatis", {})
+	local group = vim.api.nvim_create_augroup("NvimMybatis", { clear = true })
+	local function set_mapper_filetype(args)
+		local bufnr = args.buf
+		if vim.bo[bufnr].filetype ~= "mybatis" and utils.is_mybatis_file(bufnr) then
+			vim.bo[bufnr].filetype = "mybatis"
+		end
+	end
+
+	-- Mapper files are XML on disk, but use the MyBatis parser instead of the
+	-- generic XML parser. The filename check keeps ordinary XML files untouched.
+	autocmd({ "BufRead", "BufNewFile", "BufEnter" }, {
+		pattern = "*.xml",
+		group = group,
+		callback = set_mapper_filetype,
+	})
 	autocmd("FileType", {
-		pattern = "xml",
+		pattern = "mybatis",
 		group = group,
 		callback = function(args)
 			local bufnr = args.buf
-			if not utils.is_mybatis_file(bufnr) then
-				return
-			end
+			treesitter_install.ensure(bufnr)
 			map("n", "gd", function()
 				jump(bufnr)
 			end, {
 				buffer = bufnr,
-				desc = "Mybatis: navigate from XML",
+				desc = "Mybatis: navigate from mapper",
 			})
 			-- native completion (<C-x><C-o>); only when nothing else claimed omnifunc
 			if vim.bo[bufnr].omnifunc == "" then
 				vim.bo[bufnr].omnifunc = "v:lua.require'nvim-mybatis.completion.omnifunc'.omnifunc"
 			end
-			logger.info("XML file loaded successfully")
+			logger.info("MyBatis mapper loaded successfully")
 		end,
 	})
 	autocmd("FileType", {

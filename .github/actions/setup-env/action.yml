@@ -47,7 +47,7 @@ inputs:
     required: false
     default: "false"
   parsers:
-    description: Install the Java and XML Tree-sitter parsers
+    description: Install the Java and MyBatis Tree-sitter parsers
     required: false
     default: "false"
 
@@ -236,7 +236,7 @@ runs:
       shell: bash
       run: |
         nvim --headless -u tests/minimal_init.lua \
-          -c "lua require('nvim-treesitter').install({ 'java', 'xml' }):wait(300000)" \
+          -c "lua require('nvim-treesitter').install({ 'java', 'mybatis' }):wait(300000)" \
           -c "qa!"
 
     - name: Verify Tree-sitter parsers
@@ -244,7 +244,7 @@ runs:
       shell: bash
       run: |
         test -f "$HOME/.local/share/nvim/site/parser/java.so"
-        test -f "$HOME/.local/share/nvim/site/parser/xml.so"
+        test -f "$HOME/.local/share/nvim/site/parser/mybatis.so"
 
     - name: Save StyLua cache
       if: inputs.stylua == 'true' && steps.stylua_cache.outputs.cache-hit != 'true'

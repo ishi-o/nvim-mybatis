@@ -53,7 +53,7 @@ function source:get_completions(ctx, callback)
 end
 
 function source:enabled()
-	if not utils.is_mybatis_xml() then
+	if not utils.is_mybatis_mapper() then
 		return false
 	end
 	return context.detect() ~= nil

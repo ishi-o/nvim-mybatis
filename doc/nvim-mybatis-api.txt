@@ -15,8 +15,6 @@ TYPES                                           *nvim-mybatis-api-index-types*
 
 - alias ContextKind <types/mybatis.completion.ContextKind.md>
 - alias Provider <types/mybatis.completion.Provider.md>
-- alias SearchTool <types/mybatis.utils.SearchTool.md>
-- alias SearchToolHandler <types/mybatis.utils.SearchToolHandler.md>
 - class Backend <types/mybatis.completion.Backend.md>
 - class Context <types/mybatis.completion.Context.md>
 - class CrudTagArgs <types/mybatis.action.CrudTagArgs.md>

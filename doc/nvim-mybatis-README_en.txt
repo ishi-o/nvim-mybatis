@@ -106,12 +106,11 @@ DEFAULT CONFIGURATION ~
     {
         autocmd = true,
         xml_search_pattern = { "**/*Mapper*.xml" },
-        xml_search_tool = "default",
         completion_provider = "default",
         mapper_name_pattern = { "[Mm]apper" },
         classpaths = {
-            java = { "src/main/java" },
-            xml = { "src/main/resources" },
+            java = { "src/main/java", "src/test/java" },
+            xml = { "src/main/resources", "src/test/resources" },
         },
         root_file = { "pom.xml", "build.gradle", "build.gradle.kts" },
         debug = false,
@@ -134,7 +133,9 @@ installing those autocmds.
 
 📝 NOTES                    *nvim-mybatis-README_en-nvim-mybatis-📝-notes*
 
-- **nvim-treesitter**: Required for the Java and XML parsers.
+- **nvim-treesitter**: Required for Java parser support and automatic
+  installation of `tree-sitter-mybatis`. nvim-mybatis assigns matching mapper
+  XML files the `mybatis` filetype and installs the parser when one is opened.
 - The public configuration, Lua API, and type reference is available in the generated `:help nvim-mybatis-api` documentation.
 
 

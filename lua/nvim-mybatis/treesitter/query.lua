@@ -2,6 +2,37 @@
 local M = {}
 
 local ts = vim.treesitter
+local MYBATIS = "mybatis"
+
+local function query_string(value)
+	return '"' .. value:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n") .. '"'
+end
+
+local function tagged_attribute_query(tags, attribute, value)
+	local patterns = {}
+	for _, tag in ipairs(tags) do
+		for _, quote in ipairs({ '"', "'" }) do
+			table.insert(
+				patterns,
+				string.format(
+					[[
+					(%s
+						(Name) @tag_name
+						(Attribute
+							(Name) @attr_name
+							(AttValue) @attr_value
+							(#eq? @attr_name %s)
+							(#eq? @attr_value %s)))
+				]],
+					tag,
+					query_string(attribute),
+					query_string(quote .. value .. quote)
+				)
+			)
+		end
+	end
+	return table.concat(patterns, "\n")
+end
 
 --- @return mybatis.treesitter.Query query
 function M.package()
@@ -83,19 +114,8 @@ end
 --- @return mybatis.treesitter.Query
 function M.sqlid(sqlid)
 	return {
-		lang = "xml",
-		query = string.format(
-			[[
-			(STag
-			  (Name) @tag_name
-			  (Attribute
-				(Name) @attr_name
-				(AttValue) @attr_value
-				(#eq? @tag_name "sql")
-				(#eq? @attr_value "\"%s\"")))
-			]],
-			sqlid
-		),
+		lang = MYBATIS,
+		query = tagged_attribute_query({ "SqlElem" }, "id", sqlid),
 	}
 end
 
@@ -103,19 +123,8 @@ end
 --- @return mybatis.treesitter.Query
 function M.namespace(namespace)
 	return {
-		lang = "xml",
-		query = string.format(
-			[[
-			(STag
-				(Name) @tag_name (#eq? @tag_name "mapper")
-				(Attribute
-					(Name) @attr_name (#eq? @attr_name "namespace")
-					(AttValue) @attr_value (#eq? @attr_value "\"%s\"")
-				) @namespace_attr
-			) @mapper_tag
-			]],
-			namespace
-		),
+		lang = MYBATIS,
+		query = tagged_attribute_query({ "MapperSTag", "SqlMapSTag" }, "namespace", namespace),
 	}
 end
 
@@ -123,14 +132,10 @@ end
 --- @return mybatis.treesitter.Query
 function M.crud_id(method)
 	return {
-		lang = "xml",
-		query = string.format(
-			[[
-			(Attribute
-				(Name) @attr_name (#eq? @attr_name "id")
-				(AttValue) @attr_value (#eq? @attr_value "\"%s\"")
-			)
-			]],
+		lang = MYBATIS,
+		query = tagged_attribute_query(
+			{ "SelElem", "InsElem", "UpdElem", "DelElem" },
+			"id",
 			method
 		),
 	}
@@ -140,16 +145,17 @@ end
 --- @return mybatis.treesitter.Query
 function M.resultMap(resultMap)
 	return {
-		lang = "xml",
+		lang = MYBATIS,
 		query = string.format(
 			[[
 			(STag
 			  (Name) @tag_name
-			  (Attribute
-				(Name) @attr_name
-				(AttValue) @attr_value
-				(#eq? @tag_name "resultMap")
-				(#eq? @attr_value "\"%s\"")))
+				(Attribute
+					(Name) @attr_name
+					(AttValue) @attr_value
+					(#eq? @tag_name "resultMap")
+					(#eq? @attr_name "id")
+					(#eq? @attr_value "\"%s\"")))
 			]],
 			resultMap
 		),
@@ -159,9 +165,9 @@ end
 --- @return mybatis.treesitter.Query all `<sql id="...">` fragment ids in a buffer
 function M.sqlids()
 	return {
-		lang = "xml",
+		lang = MYBATIS,
 		query = [[
-			(STag
+			(SqlElem
 			  (Name) @tag_name
 			  (Attribute
 			    (Name) @attr_name
@@ -175,10 +181,13 @@ end
 --- @return mybatis.treesitter.Query
 function M.mapper_etag()
 	return {
-		lang = "xml",
+		lang = MYBATIS,
 		query = [[
-            (ETag (Name) @tag_name (#eq? @tag_name "mapper"))
-        ]],
+			[
+				(MapperETag (Name) @tag_name)
+				(SqlMapETag (Name) @tag_name)
+			]
+		]],
 	}
 end
 

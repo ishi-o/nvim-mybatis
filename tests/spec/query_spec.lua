@@ -2,7 +2,7 @@ local helpers = require("spec.helpers")
 local query = require("nvim-mybatis.treesitter.query")
 local scan = require("nvim-mybatis.treesitter.scan")
 
-local XML = "project/src/main/resources/mapper/UserMapper.xml"
+local MYBATIS = "project/src/main/resources/mapper/UserMapper.xml"
 local MAPPER_JAVA = "project/src/main/java/com/example/mapper/UserMapper.java"
 local USER_JAVA = "project/src/main/java/com/example/entity/User.java"
 
@@ -24,31 +24,37 @@ describe("treesitter.query", function()
 	end)
 
 	it("finds the mapper namespace declaration", function()
-		local bufnr = helpers.load_buf(XML, "xml")
+		local bufnr = helpers.load_buf(MYBATIS, "mybatis")
 		assert.is_true(count_matches(bufnr, query.namespace("com.example.mapper.UserMapper")) >= 1)
 		assert.equals(0, count_matches(bufnr, query.namespace("com.unknown.NoSuchMapper")))
 	end)
 
 	it("finds sql fragment ids", function()
-		local bufnr = helpers.load_buf(XML, "xml")
+		local bufnr = helpers.load_buf(MYBATIS, "mybatis")
 		assert.is_true(count_matches(bufnr, query.sqlid("baseColumns")) >= 1)
 		assert.equals(0, count_matches(bufnr, query.sqlid("noSuchFragment")))
 	end)
 
 	it("finds crud id attributes", function()
-		local bufnr = helpers.load_buf(XML, "xml")
+		local bufnr = helpers.load_buf(MYBATIS, "mybatis")
 		assert.is_true(count_matches(bufnr, query.crud_id("selectUser")) >= 1)
 		assert.equals(0, count_matches(bufnr, query.crud_id("noSuchMethod")))
 	end)
 
 	it("finds the mapper end tag", function()
-		local bufnr = helpers.load_buf(XML, "xml")
+		local bufnr = helpers.load_buf(MYBATIS, "mybatis")
 		assert.is_true(count_matches(bufnr, query.mapper_etag()) >= 1)
 	end)
 
 	it("finds all sql ids in the buffer", function()
-		local bufnr = helpers.load_buf(XML, "xml")
+		local bufnr = helpers.load_buf(MYBATIS, "mybatis")
 		assert.is_true(count_matches(bufnr, query.sqlids()) >= 1)
+	end)
+
+	it("finds result map references", function()
+		local bufnr = helpers.load_buf(MYBATIS, "mybatis")
+		assert.is_true(count_matches(bufnr, query.resultMap("userMap")) >= 1)
+		assert.equals(0, count_matches(bufnr, query.resultMap("noSuchMap")))
 	end)
 
 	it("finds java interfaces and packages", function()
