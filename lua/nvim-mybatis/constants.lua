@@ -1,5 +1,9 @@
 --- @module 'mybatis.constants'
 
+local MYBATIS_FILETYPE = "mybatis.xml"
+
+local MYBATIS_LANGUAGE = "mybatis"
+
 --- XML attributes whose values can refer to Java types.
 --- @type string[]
 local TYPE_ATTRIBUTES = {
@@ -22,6 +26,8 @@ local CRUD_TAGS = {
 }
 
 return {
+	MYBATIS_FILETYPE = MYBATIS_FILETYPE,
+	MYBATIS_LANGUAGE = MYBATIS_LANGUAGE,
 	TYPE_ATTRIBUTES = TYPE_ATTRIBUTES,
 	CRUD_TAGS = CRUD_TAGS,
 }

@@ -2,7 +2,7 @@
 local M = {}
 
 local ts = vim.treesitter
-local MYBATIS = "mybatis"
+local MYBATIS = require("nvim-mybatis.constants").MYBATIS_LANGUAGE
 
 local function query_string(value)
 	return '"' .. value:gsub("\\", "\\\\"):gsub('"', '\\"'):gsub("\n", "\\n") .. '"'

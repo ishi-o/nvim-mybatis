@@ -19,8 +19,8 @@ function M.load_buf(relpath, filetype)
 	vim.fn.bufload(bufnr)
 	vim.bo[bufnr].filetype = filetype
 	vim.api.nvim_set_current_buf(bufnr)
-	vim.treesitter.start(bufnr, filetype)
-	vim.treesitter.get_parser(bufnr, filetype):parse()
+	vim.treesitter.start(bufnr)
+	vim.treesitter.get_parser(bufnr):parse()
 	return bufnr
 end
 

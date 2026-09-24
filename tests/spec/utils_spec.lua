@@ -8,7 +8,7 @@ describe("utils", function()
 
 	it("is_mybatis_file matches mapper name patterns", function()
 		local bufnr =
-			helpers.load_buf("project/src/main/resources/mapper/UserMapper.xml", "mybatis")
+			helpers.load_buf("project/src/main/resources/mapper/UserMapper.xml", "mybatis.xml")
 		assert.is_true(utils.is_mybatis_file(bufnr))
 	end)
 

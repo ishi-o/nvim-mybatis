@@ -113,7 +113,7 @@ The optional `autocmd = true` setting keeps the existing filetype autocmds and b
 
 ## 📝 Notes
 
-- **[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)**: Required for Java parser support and automatic installation of `tree-sitter-mybatis`. nvim-mybatis assigns matching mapper XML files the `mybatis` filetype and installs the parser when one is opened.
+- **[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)**: Required for Java and XML parser support. nvim-mybatis registers the custom `tree-sitter-mybatis` parser with nvim-treesitter and installs all three parsers automatically. Matching mapper XML files use the `mybatis.xml` hybrid filetype and the MyBatis parser. XML language-server configurations should include both `xml` and `mybatis.xml` in their filetypes.
 - The public configuration, Lua API, and type reference is available in the generated `:help nvim-mybatis-api` documentation.
 
 ## 🤝 Contributing

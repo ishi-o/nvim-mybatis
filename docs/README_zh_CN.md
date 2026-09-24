@@ -90,7 +90,7 @@ require("blink.cmp").setup({
 
 ## 📝 注意事项
 
-- **[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)**：Java 解析和自动安装 `tree-sitter-mybatis` 都需要它。nvim-mybatis 会将匹配的 Mapper XML 文件设置为 `mybatis` 文件类型，并在打开时安装解析器。
+- **[nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter)**：Java 和 XML 解析需要它。nvim-mybatis 会将自定义的 `tree-sitter-mybatis` 注册到 nvim-treesitter，并自动安装这三个解析器。匹配的 Mapper XML 文件使用 `mybatis.xml` 混合文件类型和 MyBatis 解析器。XML 语言服务器配置应同时包含 `xml` 和 `mybatis.xml` 文件类型。
 - 公开的配置、Lua API 和类型参考请查看生成的 `:help nvim-mybatis-api` 文档。
 
 ## 🤝 参与贡献

@@ -3,6 +3,7 @@ local M = {}
 local autocmd = vim.api.nvim_create_autocmd
 local map = vim.keymap.set
 local utils = require("nvim-mybatis.utils")
+local constants = require("nvim-mybatis.constants")
 local navigator = require("nvim-mybatis.navigator")
 local logger = require("nvim-mybatis.logger")
 local treesitter_install = require("nvim-mybatis.treesitter.install")
@@ -13,13 +14,29 @@ local function jump(bufnr)
 	end
 end
 
+local function mapper_filetype(_, bufnr)
+	if utils.is_mybatis_file(bufnr) then
+		return constants.MYBATIS_FILETYPE
+	end
+end
+
 --- Register MyBatis filetype autocmds and buffer-local `gd` mappings.
 function M.setup()
 	local group = vim.api.nvim_create_augroup("NvimMybatis", { clear = true })
+	if vim.filetype and vim.filetype.add then
+		vim.filetype.add({
+			pattern = {
+				[".*%.xml"] = mapper_filetype,
+			},
+		})
+	end
+
 	local function set_mapper_filetype(args)
 		local bufnr = args.buf
-		if vim.bo[bufnr].filetype ~= "mybatis" and utils.is_mybatis_file(bufnr) then
-			vim.bo[bufnr].filetype = "mybatis"
+		if
+			vim.bo[bufnr].filetype ~= constants.MYBATIS_FILETYPE and utils.is_mybatis_file(bufnr)
+		then
+			vim.bo[bufnr].filetype = constants.MYBATIS_FILETYPE
 		end
 	end
 
@@ -31,7 +48,7 @@ function M.setup()
 		callback = set_mapper_filetype,
 	})
 	autocmd("FileType", {
-		pattern = "mybatis",
+		pattern = { constants.MYBATIS_FILETYPE, constants.MYBATIS_LANGUAGE },
 		group = group,
 		callback = function(args)
 			local bufnr = args.buf

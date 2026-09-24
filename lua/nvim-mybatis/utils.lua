@@ -2,6 +2,7 @@ local M = {}
 
 local uv = vim.uv or vim.loop
 local config = require("nvim-mybatis.config"):get()
+local constants = require("nvim-mybatis.constants")
 local logger = require("nvim-mybatis.logger")
 
 --- check if the filename matches config.mapper_name_pattern
@@ -31,7 +32,8 @@ end
 --- @return boolean
 function M.is_mybatis_mapper(bufnr)
 	bufnr = bufnr or vim.api.nvim_get_current_buf()
-	return vim.bo[bufnr].filetype == "mybatis"
+	local filetype = vim.bo[bufnr].filetype
+	return filetype == constants.MYBATIS_FILETYPE or filetype == constants.MYBATIS_LANGUAGE
 end
 
 --- Backwards-compatible alias for callers that used the old XML name.
