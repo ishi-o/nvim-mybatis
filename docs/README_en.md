@@ -42,6 +42,7 @@ A lightweight Neovim plugin powered by Tree-sitter for enhanced navigation betwe
 ```lua
 {
   "ishi-o/nvim-mybatis",
+  dependencies = { "nvim-treesitter/nvim-treesitter" },
   opts = {},
 }
 ```

@@ -42,6 +42,7 @@
 ```lua
 {
   "ishi-o/nvim-mybatis",
+  dependencies = { "nvim-treesitter/nvim-treesitter" },
   opts = {},
 }
 ```
